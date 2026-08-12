@@ -59,8 +59,7 @@ function VerifyEmailPage() {
     <AuthLayout
       badge="Account activation"
       title="Verify your email"
-      subtitle="Paste the token from your verification email, or request a new one."
-      footer={
+subtitle="Enter the 6-digit code from your verification email, or request a new one."      footer={
         <Link to="/login" className="text-primary hover:underline">
           Back to sign in
         </Link>
@@ -74,8 +73,16 @@ function VerifyEmailPage() {
           </p>
         ) : null}
         <div className="space-y-2">
-          <Label htmlFor="token">Verification token</Label>
-          <Input id="token" required value={token} onChange={(e) => setToken(e.target.value)} />
+          <Label htmlFor="token">Verification code</Label>
+          <Input
+            id="token"
+            required
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="123456"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Verifying…" : "Verify email"}

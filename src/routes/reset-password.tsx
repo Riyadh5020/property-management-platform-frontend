@@ -55,7 +55,7 @@ function ResetPasswordPage() {
       subtitle="Paste the token from the reset email and choose a new password."
       footer={
         <Link to="/login" className="text-primary hover:underline">
-          Back to sign in
+          Back to sign inasf
         </Link>
       }
     >

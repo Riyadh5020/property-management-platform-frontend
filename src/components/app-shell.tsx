@@ -74,17 +74,6 @@ const propertyNav: { group: string; items: NavItem[] }[] = [
   },
 ];
 
-const adminNav: { group: string; items: NavItem[] }[] = [
-  {
-    group: "Console",
-    items: [
-      { to: "/admin", label: "Overview", icon: LayoutDashboard },
-      { to: "/admin/users", label: "Users", icon: Users },
-      { to: "/admin/admins", label: "Administrators", icon: Shield },
-    ],
-  },
-];
-
 export function AppShell({
   children,
   variant = "user",
@@ -97,8 +86,19 @@ export function AppShell({
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = variant === "admin";
-  const nav = isAdmin ? adminNav : propertyNav;
   const session = isAdmin ? auth.admin : auth.user;
+
+  const adminNav: { group: string; items: NavItem[] }[] = [
+    {
+      group: "Console",
+      items: [
+        { to: "/admin", label: "Overview", icon: LayoutDashboard },
+        { to: "/admin/users", label: "Users", icon: Users },
+        { to: "/admin/admins", label: "Administrators", icon: Shield },
+      ],
+    },
+  ];
+  const nav = isAdmin ? adminNav : propertyNav;
 
   useEffect(() => {
     setOpen(false);

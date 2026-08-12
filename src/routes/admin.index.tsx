@@ -47,8 +47,7 @@ function AdminHome() {
           <Shield className="size-5 text-primary" />
           <h2 className="mt-3 font-semibold">Administrators</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create administrators, edit their details and control their access status. Requires a
-            super-admin token.
+            Create administrators, edit their details and control their access status.
           </p>
           <Button asChild size="sm" className="mt-4">
             <Link to="/admin/admins">Manage admins</Link>

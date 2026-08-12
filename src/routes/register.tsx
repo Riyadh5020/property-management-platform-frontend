@@ -50,15 +50,14 @@ function RegisterPage() {
     return (
       <AuthLayout
         title="Check your inbox"
-        subtitle={`We sent a verification link to ${form.email}. Your account stays pending until it's verified.`}
-        footer={
+subtitle={`We sent a 6-digit verification code to ${form.email}. Your account stays pending until it's verified.`}        footer={
           <Link to="/login" className="text-primary hover:underline">
             Back to sign in
           </Link>
         }
       >
-        <Button className="w-full" onClick={() => navigate({ to: "/verify-email" })}>
-          Enter verification token
+   <Button className="w-full" onClick={() => navigate({ to: "/verify-email" })}>
+          Enter verification code
         </Button>
       </AuthLayout>
     );
