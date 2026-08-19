@@ -22,6 +22,10 @@ export const Route = createFileRoute("/admin/login")({
   component: AdminLoginPage,
 });
 
+function homeFor(role: string | undefined) {
+  return role === "superAdmin" ? "/admin" : "/dashboard";
+}
+
 function AdminLoginPage() {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -31,7 +35,9 @@ function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (auth.ready && auth.admin) navigate({ to: "/admin", replace: true });
+    if (auth.ready && auth.admin) {
+      navigate({ to: homeFor(auth.admin.admin?.role), replace: true });
+    }
   }, [auth.ready, auth.admin, navigate]);
 
   const submit = async (event: React.FormEvent) => {
@@ -40,7 +46,7 @@ function AdminLoginPage() {
     setLoading(true);
     try {
       await auth.loginAdmin(email, password);
-      navigate({ to: "/admin" });
+      // navigation happens via the useEffect above once auth.admin updates
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -53,11 +59,6 @@ function AdminLoginPage() {
       badge="Restricted area"
       title="Administrator sign in"
       subtitle="Separate credentials from tenant/manager accounts."
-      footer={
-        <Link to="/login" className="hover:text-foreground">
-          ← Standard user sign in
-        </Link>
-      }
     >
       <form onSubmit={submit} className="space-y-4">
         <FormError message={error} />
@@ -83,7 +84,7 @@ function AdminLoginPage() {
           />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in…" : "Enter console"}
+          {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
     </AuthLayout>

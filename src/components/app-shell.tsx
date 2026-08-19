@@ -1,13 +1,17 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   Building2,
   CarFront,
   ClipboardList,
+  CreditCard,
   FileSignature,
   Gauge,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   Menu,
+  PhoneCall,
   PieChart,
   Receipt,
   Settings,
@@ -16,6 +20,7 @@ import {
   Sparkles,
   Users,
   UserCog,
+  Wallet,
   Wrench,
   Warehouse,
   X,
@@ -32,54 +37,83 @@ interface NavItem {
   icon: typeof Building2;
 }
 
-const propertyNav: { group: string; items: NavItem[] }[] = [
+type NavSection = { group: string; items: NavItem[] };
+
+const managerNav: NavSection[] = [
   {
     group: "Overview",
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
-    group: "Portfolio",
-    items: [
-      { to: "/buildings", label: "Buildings", icon: Building2 },
-      { to: "/units", label: "Units", icon: Warehouse },
-      { to: "/amenities", label: "Amenities", icon: Sparkles },
-      { to: "/parking", label: "Parking", icon: CarFront },
-    ],
-  },
-  {
-    group: "Occupancy",
-    items: [
-      { to: "/tenants", label: "Tenants", icon: Users },
-      { to: "/leases", label: "Leases", icon: FileSignature },
-      { to: "/owners", label: "Owners", icon: PieChart },
-    ],
-  },
-  {
     group: "Operations",
     items: [
-      { to: "/billing", label: "Rent & billing", icon: Receipt },
-      { to: "/utilities", label: "Utilities", icon: Gauge },
+      { to: "/expenses", label: "Expenses", icon: Wallet },
+      { to: "/parking", label: "Parking", icon: CarFront },
+      { to: "/tenants", label: "Tenants", icon: Users },
       { to: "/maintenance", label: "Maintenance", icon: Wrench },
-      { to: "/visitors", label: "Visitors & security", icon: ShieldCheck },
+      { to: "/billing", label: "Rent & billing", icon: Receipt },
       { to: "/staff", label: "Staff", icon: ClipboardList },
+      { to: "/emergency-contacts", label: "Emergency contacts", icon: PhoneCall },
     ],
   },
   {
     group: "Insights",
     items: [
-      { to: "/reports", label: "Reports", icon: PieChart },
-      { to: "/profile", label: "My account", icon: UserCog },
+      { to: "/notices", label: "Notices", icon: Megaphone },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
 
-const adminConsoleNav: { group: string; items: NavItem[] }[] = [
+const ownerNav: NavSection[] = [
+  {
+    group: "Overview",
+    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    group: "Operations",
+    items: [
+      { to: "/expenses", label: "Expenses", icon: Wallet },
+      { to: "/parking", label: "Parking", icon: CarFront },
+      { to: "/tenants", label: "Tenants", icon: Users },
+      { to: "/maintenance", label: "Maintenance approvals", icon: Wrench },
+      { to: "/billing", label: "Rent & billing", icon: Receipt },
+      { to: "/staff", label: "Staff", icon: ClipboardList },
+      { to: "/emergency-contacts", label: "Emergency contacts", icon: PhoneCall },
+    ],
+  },
+  {
+    group: "Ownership",
+    items: [
+      { to: "/flat-status", label: "Flat status", icon: Building2 },
+      { to: "/admin/admins", label: "Manage managers", icon: Shield },
+    ],
+  },
+  {
+    group: "Insights",
+    items: [
+      { to: "/notices", label: "Notices", icon: Megaphone },
+      { to: "/settings", label: "Settings", icon: Settings },
+    ],
+  },
+];
+
+const superAdminConsoleNav: NavSection[] = [
   {
     group: "Console",
     items: [
       { to: "/admin", label: "Overview", icon: LayoutDashboard },
       { to: "/admin/admins", label: "Administrators", icon: Shield },
+    ],
+  },
+  {
+    group: "Platform",
+    items: [
+      { to: "/reports", label: "Reports", icon: PieChart },
+      { to: "/buildings", label: "Property update", icon: Building2 },
+      { to: "/building-accounts", label: "Building accounts", icon: CreditCard },
+      { to: "/subscriptions", label: "Subscription", icon: Sparkles },
+      { to: "/notices", label: "Notices", icon: Megaphone },
     ],
   },
 ];
@@ -91,14 +125,19 @@ export function AppShell({
   children: ReactNode;
   variant?: "workspace" | "console";
 }) {
-  const navigate = useNavigate();
+   const navigate = useNavigate();
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isConsole = variant === "console";
   const session = auth.admin;
+  const role = session?.admin?.role;
+  const isConsole = variant === "console" || role === "superAdmin";
 
-  const nav = isConsole ? adminConsoleNav : propertyNav;
+  const nav = isConsole
+    ? superAdminConsoleNav
+    : role === "owner"
+      ? ownerNav
+      : managerNav;
 
   useEffect(() => {
     setOpen(false);
@@ -222,11 +261,11 @@ export function AppShell({
               <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
                 Property workspace
               </Link>
-            ) : (
+            ) : role !== "manager" ? (
               <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground">
                 Admin console
               </Link>
-            )}
+            ) : null}
           </div>
         </header>
         <main className="px-4 py-6 lg:px-8 lg:py-8">{children}</main>

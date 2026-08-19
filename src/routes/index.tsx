@@ -37,7 +37,7 @@ const modules = [
   { icon: Users, title: "Tenants", text: "Profiles, ID documents, co-tenants and move-in / move-out workflow." },
   { icon: FileSignature, title: "Leases", text: "Agreements, digital signing status, escalation schedules and deposits." },
   { icon: Receipt, title: "Rent & billing", text: "Monthly invoices, utility charges, penalties and partial payments." },
-  { icon: Wrench, title: "Maintenance", text: "Tenant requests, preventive schedules and common area upkeep." },
+  { icon: Wrench, title: "Maintenance", text: "Requests, approvals, preventive schedules and common area upkeep." },
   { icon: ShieldCheck, title: "Visitors & security", text: "Visitor log, deliveries, guard roster and incident reports." },
   { icon: CarFront, title: "Parking", text: "Slot assignment per unit, visitor parking and fee tracking." },
   { icon: Gauge, title: "Utilities", text: "Meter readings, bill calculation and vendor management." },
@@ -56,14 +56,8 @@ function LandingPage() {
         </div>
         <span className="font-semibold">EstateOps</span>
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/admin/login">Admin</Link>
-          </Button>
-          <Button asChild variant="secondary" size="sm">
-            <Link to="/login">Sign in</Link>
-          </Button>
           <Button asChild size="sm">
-            <Link to="/register">Get started</Link>
+            <Link to="/admin/login">Sign in</Link>
           </Button>
         </div>
       </header>
@@ -77,14 +71,11 @@ function LandingPage() {
         </h1>
         <p className="mt-5 max-w-2xl text-muted-foreground">
           EstateOps brings occupancy, leases, rent collection, utilities, maintenance, security and
-          owner payouts together — built to plug straight into your own API.
+          owner payouts together — one console for super admins, owners and managers.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link to="/register">Create an account</Link>
-          </Button>
-          <Button asChild size="lg" variant="secondary">
-            <Link to="/dashboard">Explore the workspace</Link>
+            <Link to="/admin/login">Sign in to your console</Link>
           </Button>
         </div>
       </section>
@@ -105,11 +96,8 @@ function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-xs text-muted-foreground">
           <p>© 2026 EstateOps</p>
           <div className="flex gap-4">
-            <Link to="/login" className="hover:text-foreground">
-              User sign in
-            </Link>
             <Link to="/admin/login" className="hover:text-foreground">
-              Admin sign in
+              Sign in
             </Link>
           </div>
         </div>

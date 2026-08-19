@@ -4,8 +4,9 @@
  * against localhost during development and a deployed API in production.
  *
  * Access tokens are kept in memory only (not localStorage) to reduce exposure
- * to XSS. This means a full page refresh will clear the access token — a
- * refresh-token-based silent re-auth flow restores the session on load.
+ * to XSS. A refresh-token-based silent re-auth flow restores the session on
+ * page load, and also retries once if a request comes back 401 mid-session
+ * (e.g. the access token expired while the user was active).
  */
 
 const DEFAULT_BASE_URL =
@@ -62,6 +63,36 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
+// Prevents a burst of parallel 401s from each independently calling the
+// refresh endpoint — they all await the same in-flight refresh instead.
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function tryRefreshAdminToken(): Promise<string | null> {
+  if (!isBrowser()) return null;
+  const storedRefreshToken = window.localStorage.getItem(ADMIN_REFRESH_KEY);
+  if (!storedRefreshToken) return null;
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const result = await apiRequest<{ accessToken: string }>("/admins/refresh-token", {
+          method: "POST",
+          body: { refreshToken: storedRefreshToken },
+        });
+        tokenStore.setAdmin(result.accessToken, storedRefreshToken);
+        return result.accessToken;
+      } catch {
+        tokenStore.setAdmin(null, null);
+        return null;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+
+  return refreshInFlight;
+}
+
 /** Performs a request and unwraps the `{ success, data }` envelope when present. */
 export async function apiRequest<T = unknown>(
   path: string,
@@ -85,6 +116,23 @@ export async function apiRequest<T = unknown>(
       `Cannot reach the API at ${getApiBaseUrl()}. Check that the backend is running and the base URL in Settings is correct.`,
       0,
     );
+  }
+
+  // Silent retry-once on 401 for admin-authed requests, except the refresh
+  // call itself (avoids an infinite loop if the refresh token is also dead).
+  if (response.status === 401 && auth === "admin" && !path.includes("/refresh-token")) {
+    const refreshedToken = await tryRefreshAdminToken();
+    if (refreshedToken) {
+      headers["Authorization"] = `Bearer ${refreshedToken}`;
+      try {
+        response = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+      } catch {
+        throw new ApiError(
+          `Cannot reach the API at ${getApiBaseUrl()}. Check that the backend is running and the base URL in Settings is correct.`,
+          0,
+        );
+      }
+    }
   }
 
   const text = await response.text();

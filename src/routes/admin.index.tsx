@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Shield } from "lucide-react";
+import { useEffect } from "react";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,13 @@ export const Route = createFileRoute("/admin/")({
 
 function AdminHome() {
   const auth = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (auth.ready && auth.admin && auth.admin.admin?.role !== "superAdmin") {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [auth.ready, auth.admin, navigate]);
 
   return (
     <AppShell variant="console">

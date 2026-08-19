@@ -12,15 +12,21 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AmenitiesRouteImport } from './routes/amenities'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as BuildingAccountsRouteImport } from './routes/building-accounts'
 import { Route as BuildingsRouteImport } from './routes/buildings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmergencyContactsRouteImport } from './routes/emergency-contacts'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as FlatStatusRouteImport } from './routes/flat-status'
 import { Route as LeasesRouteImport } from './routes/leases'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
+import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
+import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as TenantsRouteImport } from './routes/tenants'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as UtilitiesRouteImport } from './routes/utilities'
@@ -44,6 +50,11 @@ const BillingRoute = BillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuildingAccountsRoute = BuildingAccountsRouteImport.update({
+  id: '/building-accounts',
+  path: '/building-accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuildingsRoute = BuildingsRouteImport.update({
   id: '/buildings',
   path: '/buildings',
@@ -54,6 +65,21 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmergencyContactsRoute = EmergencyContactsRouteImport.update({
+  id: '/emergency-contacts',
+  path: '/emergency-contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FlatStatusRoute = FlatStatusRouteImport.update({
+  id: '/flat-status',
+  path: '/flat-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeasesRoute = LeasesRouteImport.update({
   id: '/leases',
   path: '/leases',
@@ -62,6 +88,11 @@ const LeasesRoute = LeasesRouteImport.update({
 const MaintenanceRoute = MaintenanceRouteImport.update({
   id: '/maintenance',
   path: '/maintenance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoticesRoute = NoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnersRoute = OwnersRouteImport.update({
@@ -87,6 +118,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const StaffRoute = StaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionsRoute = SubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TenantsRoute = TenantsRouteImport.update({
@@ -129,15 +165,21 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
+  '/building-accounts': typeof BuildingAccountsRoute
   '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
+  '/emergency-contacts': typeof EmergencyContactsRoute
+  '/expenses': typeof ExpensesRoute
+  '/flat-status': typeof FlatStatusRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
+  '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
@@ -150,15 +192,21 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
+  '/building-accounts': typeof BuildingAccountsRoute
   '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
+  '/emergency-contacts': typeof EmergencyContactsRoute
+  '/expenses': typeof ExpensesRoute
+  '/flat-status': typeof FlatStatusRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
+  '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
@@ -172,15 +220,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
+  '/building-accounts': typeof BuildingAccountsRoute
   '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
+  '/emergency-contacts': typeof EmergencyContactsRoute
+  '/expenses': typeof ExpensesRoute
+  '/flat-status': typeof FlatStatusRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
+  '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
@@ -195,15 +249,21 @@ export interface FileRouteTypes {
     | '/'
     | '/amenities'
     | '/billing'
+    | '/building-accounts'
     | '/buildings'
     | '/dashboard'
+    | '/emergency-contacts'
+    | '/expenses'
+    | '/flat-status'
     | '/leases'
     | '/maintenance'
+    | '/notices'
     | '/owners'
     | '/parking'
     | '/reports'
     | '/settings'
     | '/staff'
+    | '/subscriptions'
     | '/tenants'
     | '/units'
     | '/utilities'
@@ -216,15 +276,21 @@ export interface FileRouteTypes {
     | '/'
     | '/amenities'
     | '/billing'
+    | '/building-accounts'
     | '/buildings'
     | '/dashboard'
+    | '/emergency-contacts'
+    | '/expenses'
+    | '/flat-status'
     | '/leases'
     | '/maintenance'
+    | '/notices'
     | '/owners'
     | '/parking'
     | '/reports'
     | '/settings'
     | '/staff'
+    | '/subscriptions'
     | '/tenants'
     | '/units'
     | '/utilities'
@@ -237,15 +303,21 @@ export interface FileRouteTypes {
     | '/'
     | '/amenities'
     | '/billing'
+    | '/building-accounts'
     | '/buildings'
     | '/dashboard'
+    | '/emergency-contacts'
+    | '/expenses'
+    | '/flat-status'
     | '/leases'
     | '/maintenance'
+    | '/notices'
     | '/owners'
     | '/parking'
     | '/reports'
     | '/settings'
     | '/staff'
+    | '/subscriptions'
     | '/tenants'
     | '/units'
     | '/utilities'
@@ -259,15 +331,21 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AmenitiesRoute: typeof AmenitiesRoute
   BillingRoute: typeof BillingRoute
+  BuildingAccountsRoute: typeof BuildingAccountsRoute
   BuildingsRoute: typeof BuildingsRoute
   DashboardRoute: typeof DashboardRoute
+  EmergencyContactsRoute: typeof EmergencyContactsRoute
+  ExpensesRoute: typeof ExpensesRoute
+  FlatStatusRoute: typeof FlatStatusRoute
   LeasesRoute: typeof LeasesRoute
   MaintenanceRoute: typeof MaintenanceRoute
+  NoticesRoute: typeof NoticesRoute
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
+  SubscriptionsRoute: typeof SubscriptionsRoute
   TenantsRoute: typeof TenantsRoute
   UnitsRoute: typeof UnitsRoute
   UtilitiesRoute: typeof UtilitiesRoute
@@ -300,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/building-accounts': {
+      id: '/building-accounts'
+      path: '/building-accounts'
+      fullPath: '/building-accounts'
+      preLoaderRoute: typeof BuildingAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/buildings': {
       id: '/buildings'
       path: '/buildings'
@@ -314,6 +399,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/emergency-contacts': {
+      id: '/emergency-contacts'
+      path: '/emergency-contacts'
+      fullPath: '/emergency-contacts'
+      preLoaderRoute: typeof EmergencyContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/flat-status': {
+      id: '/flat-status'
+      path: '/flat-status'
+      fullPath: '/flat-status'
+      preLoaderRoute: typeof FlatStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leases': {
       id: '/leases'
       path: '/leases'
@@ -326,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/maintenance'
       fullPath: '/maintenance'
       preLoaderRoute: typeof MaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notices': {
+      id: '/notices'
+      path: '/notices'
+      fullPath: '/notices'
+      preLoaderRoute: typeof NoticesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owners': {
@@ -361,6 +474,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscriptions': {
+      id: '/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof SubscriptionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tenants': {
@@ -419,15 +539,21 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AmenitiesRoute: AmenitiesRoute,
   BillingRoute: BillingRoute,
+  BuildingAccountsRoute: BuildingAccountsRoute,
   BuildingsRoute: BuildingsRoute,
   DashboardRoute: DashboardRoute,
+  EmergencyContactsRoute: EmergencyContactsRoute,
+  ExpensesRoute: ExpensesRoute,
+  FlatStatusRoute: FlatStatusRoute,
   LeasesRoute: LeasesRoute,
   MaintenanceRoute: MaintenanceRoute,
+  NoticesRoute: NoticesRoute,
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
+  SubscriptionsRoute: SubscriptionsRoute,
   TenantsRoute: TenantsRoute,
   UnitsRoute: UnitsRoute,
   UtilitiesRoute: UtilitiesRoute,
