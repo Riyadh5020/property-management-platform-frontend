@@ -14,27 +14,20 @@ import { Route as AmenitiesRouteImport } from './routes/amenities'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as BuildingsRouteImport } from './routes/buildings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LeasesRouteImport } from './routes/leases'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as TenantsRouteImport } from './routes/tenants'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as UtilitiesRouteImport } from './routes/utilities'
-import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as VisitorsRouteImport } from './routes/visitors'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -61,19 +54,9 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LeasesRoute = LeasesRouteImport.update({
   id: '/leases',
   path: '/leases',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MaintenanceRoute = MaintenanceRouteImport.update({
@@ -91,24 +74,9 @@ const ParkingRoute = ParkingRouteImport.update({
   path: '/parking',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -136,11 +104,6 @@ const UtilitiesRoute = UtilitiesRouteImport.update({
   path: '/utilities',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VerifyEmailRoute = VerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const VisitorsRoute = VisitorsRouteImport.update({
   id: '/visitors',
   path: '/visitors',
@@ -161,11 +124,6 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,26 +131,19 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
-  '/forgot-password': typeof ForgotPasswordRoute
   '/leases': typeof LeasesRoute
-  '/login': typeof LoginRoute
   '/maintenance': typeof MaintenanceRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
-  '/profile': typeof ProfileRoute
-  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
-  '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -201,26 +152,19 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
-  '/forgot-password': typeof ForgotPasswordRoute
   '/leases': typeof LeasesRoute
-  '/login': typeof LoginRoute
   '/maintenance': typeof MaintenanceRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
-  '/profile': typeof ProfileRoute
-  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
-  '/admin/users': typeof AdminUsersRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -230,26 +174,19 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
-  '/forgot-password': typeof ForgotPasswordRoute
   '/leases': typeof LeasesRoute
-  '/login': typeof LoginRoute
   '/maintenance': typeof MaintenanceRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
-  '/profile': typeof ProfileRoute
-  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
-  '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -260,26 +197,19 @@ export interface FileRouteTypes {
     | '/billing'
     | '/buildings'
     | '/dashboard'
-    | '/forgot-password'
     | '/leases'
-    | '/login'
     | '/maintenance'
     | '/owners'
     | '/parking'
-    | '/profile'
-    | '/register'
     | '/reports'
-    | '/reset-password'
     | '/settings'
     | '/staff'
     | '/tenants'
     | '/units'
     | '/utilities'
-    | '/verify-email'
     | '/visitors'
     | '/admin/admins'
     | '/admin/login'
-    | '/admin/users'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -288,26 +218,19 @@ export interface FileRouteTypes {
     | '/billing'
     | '/buildings'
     | '/dashboard'
-    | '/forgot-password'
     | '/leases'
-    | '/login'
     | '/maintenance'
     | '/owners'
     | '/parking'
-    | '/profile'
-    | '/register'
     | '/reports'
-    | '/reset-password'
     | '/settings'
     | '/staff'
     | '/tenants'
     | '/units'
     | '/utilities'
-    | '/verify-email'
     | '/visitors'
     | '/admin/admins'
     | '/admin/login'
-    | '/admin/users'
     | '/admin'
   id:
     | '__root__'
@@ -316,26 +239,19 @@ export interface FileRouteTypes {
     | '/billing'
     | '/buildings'
     | '/dashboard'
-    | '/forgot-password'
     | '/leases'
-    | '/login'
     | '/maintenance'
     | '/owners'
     | '/parking'
-    | '/profile'
-    | '/register'
     | '/reports'
-    | '/reset-password'
     | '/settings'
     | '/staff'
     | '/tenants'
     | '/units'
     | '/utilities'
-    | '/verify-email'
     | '/visitors'
     | '/admin/admins'
     | '/admin/login'
-    | '/admin/users'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -345,26 +261,19 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   BuildingsRoute: typeof BuildingsRoute
   DashboardRoute: typeof DashboardRoute
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LeasesRoute: typeof LeasesRoute
-  LoginRoute: typeof LoginRoute
   MaintenanceRoute: typeof MaintenanceRoute
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
-  ProfileRoute: typeof ProfileRoute
-  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
   TenantsRoute: typeof TenantsRoute
   UnitsRoute: typeof UnitsRoute
   UtilitiesRoute: typeof UtilitiesRoute
-  VerifyEmailRoute: typeof VerifyEmailRoute
   VisitorsRoute: typeof VisitorsRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminLoginRoute: typeof AdminLoginRoute
-  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -405,25 +314,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/leases': {
       id: '/leases'
       path: '/leases'
       fullPath: '/leases'
       preLoaderRoute: typeof LeasesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/maintenance': {
@@ -447,32 +342,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParkingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reports': {
       id: '/reports'
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -510,13 +384,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtilitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify-email': {
-      id: '/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/visitors': {
       id: '/visitors'
       path: '/visitors'
@@ -545,13 +412,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -561,26 +421,19 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   BuildingsRoute: BuildingsRoute,
   DashboardRoute: DashboardRoute,
-  ForgotPasswordRoute: ForgotPasswordRoute,
   LeasesRoute: LeasesRoute,
-  LoginRoute: LoginRoute,
   MaintenanceRoute: MaintenanceRoute,
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
-  ProfileRoute: ProfileRoute,
-  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
   TenantsRoute: TenantsRoute,
   UnitsRoute: UnitsRoute,
   UtilitiesRoute: UtilitiesRoute,
-  VerifyEmailRoute: VerifyEmailRoute,
   VisitorsRoute: VisitorsRoute,
   AdminAdminsRoute: AdminAdminsRoute,
   AdminLoginRoute: AdminLoginRoute,
-  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport

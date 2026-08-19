@@ -2,6 +2,10 @@
  * Thin client for the real backend API.
  * Base URL is configurable at runtime (Settings page) so the same build works
  * against localhost during development and a deployed API in production.
+ *
+ * Access tokens are kept in memory only (not localStorage) to reduce exposure
+ * to XSS. This means a full page refresh will clear the access token — a
+ * refresh-token-based silent re-auth flow restores the session on load.
  */
 
 const DEFAULT_BASE_URL =
@@ -9,11 +13,10 @@ const DEFAULT_BASE_URL =
   "http://localhost:8000/api/v1";
 
 const BASE_URL_KEY = "pms.apiBaseUrl";
-const USER_TOKEN_KEY = "pms.userToken";
-const USER_REFRESH_KEY = "pms.userRefreshToken";
-const ADMIN_TOKEN_KEY = "pms.adminToken";
-
+const ADMIN_REFRESH_KEY = "pms.adminRefreshToken";
 const isBrowser = () => typeof window !== "undefined";
+
+let inMemoryAdminToken: string | null = null;
 
 export function getApiBaseUrl(): string {
   if (!isBrowser()) return DEFAULT_BASE_URL;
@@ -28,23 +31,14 @@ export function setApiBaseUrl(url: string) {
 }
 
 export const tokenStore = {
-  get user() {
-    return isBrowser() ? window.localStorage.getItem(USER_TOKEN_KEY) : null;
-  },
   get admin() {
-    return isBrowser() ? window.localStorage.getItem(ADMIN_TOKEN_KEY) : null;
+    return inMemoryAdminToken;
   },
-  setUser(access: string | null, refresh?: string | null) {
+  setAdmin(access: string | null, refresh?: string | null) {
+    inMemoryAdminToken = access;
     if (!isBrowser()) return;
-    if (access) window.localStorage.setItem(USER_TOKEN_KEY, access);
-    else window.localStorage.removeItem(USER_TOKEN_KEY);
-    if (refresh) window.localStorage.setItem(USER_REFRESH_KEY, refresh);
-    else if (refresh === null) window.localStorage.removeItem(USER_REFRESH_KEY);
-  },
-  setAdmin(access: string | null) {
-    if (!isBrowser()) return;
-    if (access) window.localStorage.setItem(ADMIN_TOKEN_KEY, access);
-    else window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+    if (refresh) window.localStorage.setItem(ADMIN_REFRESH_KEY, refresh);
+    else if (refresh === null) window.localStorage.removeItem(ADMIN_REFRESH_KEY);
   },
 };
 
@@ -59,7 +53,7 @@ export class ApiError extends Error {
   }
 }
 
-type Auth = "none" | "user" | "admin";
+type Auth = "none" | "admin";
 
 export interface RequestOptions {
   method?: string;
@@ -76,7 +70,7 @@ export async function apiRequest<T = unknown>(
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
-  const token = auth === "user" ? tokenStore.user : auth === "admin" ? tokenStore.admin : null;
+  const token = auth === "admin" ? tokenStore.admin : null;
   if (auth !== "none" && token) headers["Authorization"] = `Bearer ${token}`;
 
   const init: RequestInit = { method, headers };
@@ -113,7 +107,6 @@ export async function apiRequest<T = unknown>(
     throw new ApiError(message, response.status, payload);
   }
 
-
   if (payload && typeof payload === "object" && "data" in (payload as Record<string, unknown>)) {
     return (payload as Record<string, unknown>)["data"] as T;
   }
@@ -125,24 +118,24 @@ export async function apiRequest<T = unknown>(
 /* ------------------------------------------------------------------ */
 
 export type AccountStatus = "active" | "inactive" | "suspended" | "pending";
+export type AdminRole = "superAdmin" | "owner" | "manager";
 
-export interface ApiUser {
+export interface ApiAdmin {
   id: string;
   firstName?: string;
   lastName?: string;
   email: string;
   phoneNumber?: string;
-  address?: string;
   profileImageUrl?: string;
   status?: AccountStatus;
-  role?: string;
+  role?: AdminRole;
   createdAt?: string;
 }
 
 export interface AuthResult {
   accessToken: string;
   refreshToken?: string;
-  user: ApiUser;
+  admin: ApiAdmin;
 }
 
 export interface Paginated<T> {
@@ -157,39 +150,12 @@ export function toList<T>(value: unknown): T[] {
   if (Array.isArray(value)) return value as T[];
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    for (const key of ["items", "results", "data", "users", "admins", "docs"]) {
+    for (const key of ["items", "results", "data", "admins", "docs"]) {
       if (Array.isArray(record[key])) return record[key] as T[];
     }
   }
   return [];
 }
-
-/* ------------------------------------------------------------------ */
-/* User endpoints                                                      */
-/* ------------------------------------------------------------------ */
-
-export const usersApi = {
-  register: (body: { firstName: string; lastName: string; email: string; password: string }) =>
-    apiRequest<ApiUser>("/users/register", { method: "POST", body }),
-  login: (body: { email: string; password: string }) =>
-    apiRequest<AuthResult>("/users/login", { method: "POST", body }),
-  verifyEmail: (body: { token: string }) =>
-    apiRequest("/users/verify-email", { method: "POST", body }),
-  resendVerification: (body: { email: string }) =>
-    apiRequest("/users/resend-verification-email", { method: "POST", body }),
-  forgotPassword: (body: { email: string }) =>
-    apiRequest("/users/forgot-password", { method: "POST", body }),
-  resetPassword: (body: { token: string; password: string }) =>
-    apiRequest("/users/reset-password", { method: "POST", body }),
-  me: () => apiRequest<ApiUser>("/users/me", { auth: "user" }),
-  updateMe: (body: Partial<Pick<ApiUser, "firstName" | "lastName" | "phoneNumber" | "address">>) =>
-    apiRequest<ApiUser>("/users/me", { method: "PATCH", body, auth: "user" }),
-  changePassword: (body: { currentPassword: string; newPassword: string }) =>
-    apiRequest("/users/change-password", { method: "PATCH", body, auth: "user" }),
-  updateProfileImage: (body: { profileImageUrl: string }) =>
-    apiRequest<ApiUser>("/users/profile-image", { method: "PATCH", body, auth: "user" }),
-  deleteMe: () => apiRequest("/users/me", { method: "DELETE", auth: "user" }),
-};
 
 /* ------------------------------------------------------------------ */
 /* Admin endpoints                                                     */
@@ -198,33 +164,25 @@ export const usersApi = {
 export const adminApi = {
   login: (body: { email: string; password: string }) =>
     apiRequest<AuthResult>("/admins/login", { method: "POST", body }),
-  listAdmins: () => apiRequest<unknown>("/admins", { auth: "admin" }).then(toList<ApiUser>),
+  refreshToken: (body: { refreshToken: string }) =>
+    apiRequest<{ accessToken: string }>("/admins/refresh-token", { method: "POST", body }),
+  listAdmins: () => apiRequest<unknown>("/admins", { auth: "admin" }).then(toList<ApiAdmin>),
   createAdmin: (body: {
     firstName: string;
     lastName: string;
     email: string;
     password: string;
-    role: string;
-  }) => apiRequest<ApiUser>("/admins/create", { method: "POST", body, auth: "admin" }),
-  getAdmin: (id: string) => apiRequest<ApiUser>(`/admins/${id}`, { auth: "admin" }),
+    role: AdminRole;
+  }) => apiRequest<ApiAdmin>("/admins/create", { method: "POST", body, auth: "admin" }),
+  getAdmin: (id: string) => apiRequest<ApiAdmin>(`/admins/${id}`, { auth: "admin" }),
   updateAdmin: (
     id: string,
-    body: { firstName: string; lastName: string; email: string; role: string },
-  ) => apiRequest<ApiUser>(`/admins/${id}`, { method: "PUT", body, auth: "admin" }),
+    body: { firstName: string; lastName: string; email: string; role: AdminRole },
+  ) => apiRequest<ApiAdmin>(`/admins/${id}`, { method: "PUT", body, auth: "admin" }),
   updateAdminStatus: (id: string, status: AccountStatus) =>
-    apiRequest<ApiUser>(`/admins/${id}/status`, {
+    apiRequest<ApiAdmin>(`/admins/${id}/status`, {
       method: "PATCH",
       body: { status },
       auth: "admin",
     }),
-  listUsers: () => apiRequest<unknown>("/users/admin", { auth: "admin" }).then(toList<ApiUser>),
-  getUser: (id: string) => apiRequest<ApiUser>(`/users/admin/${id}`, { auth: "admin" }),
-  updateUserStatus: (id: string, status: AccountStatus) =>
-    apiRequest<ApiUser>(`/users/admin/${id}/status`, {
-      method: "PATCH",
-      body: { status },
-      auth: "admin",
-    }),
-  deleteUser: (id: string) =>
-    apiRequest(`/users/admin/${id}`, { method: "DELETE", auth: "admin" }),
 };

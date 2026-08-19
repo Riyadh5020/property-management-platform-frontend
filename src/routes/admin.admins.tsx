@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { adminApi, type AccountStatus, type ApiUser } from "@/lib/api";
+import { adminApi, type AccountStatus, type AdminRole, type ApiAdmin } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/admins")({
   head: () => ({
@@ -49,16 +49,22 @@ export const Route = createFileRoute("/admin/admins")({
 });
 
 const STATUSES: AccountStatus[] = ["active", "inactive", "suspended", "pending"];
-const ROLES = ["admin", "superAdmin"];
+const ROLES: AdminRole[] = ["superAdmin", "owner", "manager"];
 
-const emptyForm = { firstName: "", lastName: "", email: "", password: "", role: "admin" };
+const emptyForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  role: "manager" as AdminRole,
+};
 
 function AdminAdminsPage() {
-  const [admins, setAdmins] = useState<ApiUser[]>([]);
+  const [admins, setAdmins] = useState<ApiAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<ApiUser | null>(null);
+  const [editing, setEditing] = useState<ApiAdmin | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
   const load = useCallback(async () => {
@@ -83,14 +89,14 @@ function AdminAdminsPage() {
     setOpen(true);
   };
 
-  const openEdit = (admin: ApiUser) => {
+  const openEdit = (admin: ApiAdmin) => {
     setEditing(admin);
     setForm({
       firstName: admin.firstName ?? "",
       lastName: admin.lastName ?? "",
       email: admin.email,
       password: "",
-      role: admin.role ?? "admin",
+      role: admin.role ?? "manager",
     });
     setOpen(true);
   };
@@ -117,7 +123,7 @@ function AdminAdminsPage() {
     }
   };
 
-  const changeStatus = async (admin: ApiUser, status: AccountStatus) => {
+  const changeStatus = async (admin: ApiAdmin, status: AccountStatus) => {
     try {
       await adminApi.updateAdminStatus(admin.id, status);
       setAdmins((prev) => prev.map((a) => (a.id === admin.id ? { ...a, status } : a)));
@@ -128,7 +134,7 @@ function AdminAdminsPage() {
   };
 
   return (
-    <AppShell variant="admin">
+    <AppShell variant="console">
       <PageHeader
         title="Administrators"
         description="GET /admins — super-admin token required by the backend."
@@ -183,7 +189,7 @@ function AdminAdminsPage() {
                       {[admin.firstName, admin.lastName].filter(Boolean).join(" ") || "—"}
                     </TableCell>
                     <TableCell>{admin.email}</TableCell>
-                    <TableCell>{admin.role ?? "admin"}</TableCell>
+                    <TableCell>{admin.role ?? "manager"}</TableCell>
                     <TableCell>
                       <Badge variant={admin.status === "active" ? "default" : "secondary"}>
                         {admin.status ?? "unknown"}
@@ -277,7 +283,10 @@ function AdminAdminsPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={form.role} onValueChange={(value) => setForm({ ...form, role: value })}>
+              <Select
+                value={form.role}
+                onValueChange={(value) => setForm({ ...form, role: value as AdminRole })}
+              >
                 <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>

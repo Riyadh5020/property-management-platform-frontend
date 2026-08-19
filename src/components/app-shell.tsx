@@ -74,31 +74,31 @@ const propertyNav: { group: string; items: NavItem[] }[] = [
   },
 ];
 
+const adminConsoleNav: { group: string; items: NavItem[] }[] = [
+  {
+    group: "Console",
+    items: [
+      { to: "/admin", label: "Overview", icon: LayoutDashboard },
+      { to: "/admin/admins", label: "Administrators", icon: Shield },
+    ],
+  },
+];
+
 export function AppShell({
   children,
-  variant = "user",
+  variant = "workspace",
 }: {
   children: ReactNode;
-  variant?: "user" | "admin";
+  variant?: "workspace" | "console";
 }) {
   const navigate = useNavigate();
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isAdmin = variant === "admin";
-  const session = isAdmin ? auth.admin : auth.user;
+  const isConsole = variant === "console";
+  const session = auth.admin;
 
-  const adminNav: { group: string; items: NavItem[] }[] = [
-    {
-      group: "Console",
-      items: [
-        { to: "/admin", label: "Overview", icon: LayoutDashboard },
-        { to: "/admin/users", label: "Users", icon: Users },
-        { to: "/admin/admins", label: "Administrators", icon: Shield },
-      ],
-    },
-  ];
-  const nav = isAdmin ? adminNav : propertyNav;
+  const nav = isConsole ? adminConsoleNav : propertyNav;
 
   useEffect(() => {
     setOpen(false);
@@ -106,8 +106,8 @@ export function AppShell({
 
   useEffect(() => {
     if (!auth.ready) return;
-    if (!session) navigate({ to: isAdmin ? "/admin/login" : "/login", replace: true });
-  }, [auth.ready, session, isAdmin, navigate]);
+    if (!session) navigate({ to: "/admin/login", replace: true });
+  }, [auth.ready, session, navigate]);
 
   if (!auth.ready || !session) {
     return (
@@ -118,9 +118,8 @@ export function AppShell({
   }
 
   const handleSignOut = () => {
-    if (isAdmin) auth.logoutAdmin();
-    else auth.logoutUser();
-    navigate({ to: isAdmin ? "/admin/login" : "/login", replace: true });
+    auth.logoutAdmin();
+    navigate({ to: "/admin/login", replace: true });
   };
 
   return (
@@ -141,7 +140,7 @@ export function AppShell({
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-sidebar-foreground">EstateOps</p>
             <p className="truncate text-xs text-muted-foreground">
-              {isAdmin ? "Admin console" : "Property management"}
+              {isConsole ? "Admin console" : "Property management"}
             </p>
           </div>
           <button
@@ -183,12 +182,12 @@ export function AppShell({
         <div className="border-t border-sidebar-border p-4">
           <div className="mb-3 flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-              {initials(session.user)}
+              {initials(session.admin)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{displayName(session.user)}</p>
+              <p className="truncate text-sm font-medium">{displayName(session.admin)}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {session.user?.email ?? "Signed in"}
+                {session.admin?.email ?? "Signed in"}
               </p>
             </div>
           </div>
@@ -216,10 +215,10 @@ export function AppShell({
             <Menu className="size-5" />
           </button>
           <p className="text-sm text-muted-foreground">
-            {isAdmin ? "Administration" : "Workspace"}
+            {isConsole ? "Administration" : "Workspace"}
           </p>
           <div className="ml-auto flex items-center gap-2">
-            {isAdmin ? (
+            {isConsole ? (
               <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
                 Property workspace
               </Link>

@@ -1,116 +1,92 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-import { adminApi, tokenStore, usersApi, type ApiUser } from "./api";
+import { adminApi, tokenStore, type ApiAdmin } from "./api";
 
-type Session = { token: string; user: ApiUser | null } | null;
+type Session = { token: string; admin: ApiAdmin | null } | null;
 
 interface AuthContextValue {
-  user: Session;
   admin: Session;
   ready: boolean;
-  loginUser: (email: string, password: string) => Promise<void>;
   loginAdmin: (email: string, password: string) => Promise<void>;
-  logoutUser: () => void;
   logoutAdmin: () => void;
-  refreshUser: () => Promise<void>;
-  setUserProfile: (user: ApiUser) => void;
+  setAdminProfile: (admin: ApiAdmin) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const USER_PROFILE_KEY = "pms.userProfile";
 const ADMIN_PROFILE_KEY = "pms.adminProfile";
+const ADMIN_REFRESH_KEY = "pms.adminRefreshToken";
 
-function readProfile(key: string): ApiUser | null {
+function readProfile(key: string): ApiAdmin | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(key);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as ApiUser;
+    return JSON.parse(raw) as ApiAdmin;
   } catch {
     return null;
   }
 }
 
-function writeProfile(key: string, user: ApiUser | null) {
+function writeProfile(key: string, admin: ApiAdmin | null) {
   if (typeof window === "undefined") return;
-  if (user) window.localStorage.setItem(key, JSON.stringify(user));
+  if (admin) window.localStorage.setItem(key, JSON.stringify(admin));
   else window.localStorage.removeItem(key);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Session>(null);
   const [admin, setAdmin] = useState<Session>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const userToken = tokenStore.user;
-    const adminToken = tokenStore.admin;
-    if (userToken) setUser({ token: userToken, user: readProfile(USER_PROFILE_KEY) });
-    if (adminToken) setAdmin({ token: adminToken, user: readProfile(ADMIN_PROFILE_KEY) });
-    setReady(true);
-  }, []);
+    async function restoreSession() {
+      const storedAdminRefreshToken =
+        typeof window !== "undefined" ? window.localStorage.getItem(ADMIN_REFRESH_KEY) : null;
 
-  const loginUser = useCallback(async (email: string, password: string) => {
-    const result = await usersApi.login({ email, password });
-    tokenStore.setUser(result.accessToken, result.refreshToken ?? null);
-    writeProfile(USER_PROFILE_KEY, result.user ?? null);
-    setUser({ token: result.accessToken, user: result.user ?? null });
+      if (storedAdminRefreshToken) {
+        try {
+          const result = await adminApi.refreshToken({ refreshToken: storedAdminRefreshToken });
+          tokenStore.setAdmin(result.accessToken, storedAdminRefreshToken);
+          setAdmin({ token: result.accessToken, admin: readProfile(ADMIN_PROFILE_KEY) });
+        } catch {
+          window.localStorage.removeItem(ADMIN_REFRESH_KEY);
+          writeProfile(ADMIN_PROFILE_KEY, null);
+        }
+      }
+
+      setReady(true);
+    }
+
+    void restoreSession();
   }, []);
 
   const loginAdmin = useCallback(async (email: string, password: string) => {
     const result = await adminApi.login({ email, password });
-    tokenStore.setAdmin(result.accessToken);
-    writeProfile(ADMIN_PROFILE_KEY, result.user ?? null);
-    setAdmin({ token: result.accessToken, user: result.user ?? null });
-  }, []);
-
-  const logoutUser = useCallback(() => {
-    tokenStore.setUser(null, null);
-    writeProfile(USER_PROFILE_KEY, null);
-    setUser(null);
+    tokenStore.setAdmin(result.accessToken, result.refreshToken ?? null);
+    writeProfile(ADMIN_PROFILE_KEY, result.admin ?? null);
+    setAdmin({ token: result.accessToken, admin: result.admin ?? null });
   }, []);
 
   const logoutAdmin = useCallback(() => {
-    tokenStore.setAdmin(null);
+    tokenStore.setAdmin(null, null);
     writeProfile(ADMIN_PROFILE_KEY, null);
     setAdmin(null);
   }, []);
 
-  const setUserProfile = useCallback((profile: ApiUser) => {
-    writeProfile(USER_PROFILE_KEY, profile);
-    setUser((prev) => (prev ? { ...prev, user: profile } : prev));
+  const setAdminProfile = useCallback((profile: ApiAdmin) => {
+    writeProfile(ADMIN_PROFILE_KEY, profile);
+    setAdmin((prev) => (prev ? { ...prev, admin: profile } : prev));
   }, []);
-
-  const refreshUser = useCallback(async () => {
-    const profile = await usersApi.me();
-    setUserProfile(profile);
-  }, [setUserProfile]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user,
       admin,
       ready,
-      loginUser,
       loginAdmin,
-      logoutUser,
       logoutAdmin,
-      refreshUser,
-      setUserProfile,
+      setAdminProfile,
     }),
-    [
-      user,
-      admin,
-      ready,
-      loginUser,
-      loginAdmin,
-      logoutUser,
-      logoutAdmin,
-      refreshUser,
-      setUserProfile,
-    ],
+    [admin, ready, loginAdmin, logoutAdmin, setAdminProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -122,15 +98,15 @@ export function useAuth() {
   return ctx;
 }
 
-export function displayName(user: ApiUser | null | undefined) {
-  if (!user) return "Account";
-  const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-  return name || user.email || "Account";
+export function displayName(admin: ApiAdmin | null | undefined) {
+  if (!admin) return "Account";
+  const name = [admin.firstName, admin.lastName].filter(Boolean).join(" ").trim();
+  return name || admin.email || "Account";
 }
 
-export function initials(user: ApiUser | null | undefined) {
-  if (!user) return "?";
-  const source = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "?";
+export function initials(admin: ApiAdmin | null | undefined) {
+  if (!admin) return "?";
+  const source = [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.email || "?";
   return source
     .split(/[\s@.]+/)
     .filter(Boolean)

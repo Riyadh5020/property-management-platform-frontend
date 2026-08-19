@@ -914,6 +914,260 @@ export const resources: Record<string, ResourceDef> = {
       },
     ],
   ),
+
+  expenses: def(
+    "expenses",
+    "Expenses",
+    "Expense",
+    "Operating expenses logged per building.",
+    [
+      { key: "title", label: "Expense", inTable: true },
+      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
+      {
+        key: "category",
+        label: "Category",
+        type: "select",
+        options: ["Utilities", "Maintenance", "Salary", "Supplies", "Other"],
+        inTable: true,
+      },
+      { key: "amount", label: "Amount", type: "money", inTable: true },
+      { key: "date", label: "Date", type: "date", inTable: true },
+      { key: "paidBy", label: "Paid by", inTable: true },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["Paid", "Pending"],
+        inTable: true,
+        badge: true,
+      },
+      { key: "notes", label: "Notes", type: "textarea" },
+    ],
+    [
+      {
+        title: "Elevator servicing",
+        building: "Emerald Heights",
+        category: "Maintenance",
+        amount: 15000,
+        date: "2026-08-05",
+        paidBy: "Manager - Rashed Karim",
+        status: "Paid",
+        notes: "",
+      },
+      {
+        title: "Security guard salaries",
+        building: "Slate Tower",
+        category: "Salary",
+        amount: 68000,
+        date: "2026-08-01",
+        paidBy: "Manager - Nusrat Jahan",
+        status: "Paid",
+        notes: "August payroll for 4 guards.",
+      },
+      {
+        title: "Cleaning supplies",
+        building: "Riverside Court",
+        category: "Supplies",
+        amount: 4200,
+        date: "2026-08-10",
+        paidBy: "Manager - Imran Hossain",
+        status: "Pending",
+        notes: "",
+      },
+    ],
+  ),
+
+  emergencyContacts: def(
+    "emergencyContacts",
+    "Emergency Contacts",
+    "Contact",
+    "Emergency contacts per building — fire, police, medical, vendors.",
+    [
+      { key: "name", label: "Contact name", inTable: true },
+      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
+      {
+        key: "category",
+        label: "Category",
+        type: "select",
+        options: ["Fire service", "Police", "Ambulance", "Electrician", "Plumber", "Other"],
+        inTable: true,
+      },
+      { key: "phone", label: "Phone", inTable: true },
+      { key: "notes", label: "Notes", type: "textarea" },
+    ],
+    [
+      {
+        name: "Dhaka Fire Service - Gulshan",
+        building: "Emerald Heights",
+        category: "Fire service",
+        phone: "999",
+        notes: "",
+      },
+      {
+        name: "Jamal (on-call electrician)",
+        building: "Slate Tower",
+        category: "Electrician",
+        phone: "+8801911223344",
+        notes: "Available 24/7 for emergency callouts.",
+      },
+    ],
+  ),
+
+  flatStatus: def(
+    "flatStatus",
+    "Flat Status",
+    "Flat",
+    "Live occupancy and condition status per flat, owner-facing view.",
+    [
+      { key: "unit", label: "Unit", inTable: true },
+      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
+      {
+        key: "occupancy",
+        label: "Occupancy",
+        type: "select",
+        options: ["Occupied", "Vacant", "Reserved"],
+        inTable: true,
+        badge: true,
+      },
+      {
+        key: "condition",
+        label: "Condition",
+        type: "select",
+        options: ["Good", "Needs attention", "Under repair"],
+        inTable: true,
+        badge: true,
+      },
+      { key: "lastInspected", label: "Last inspected", type: "date", inTable: true },
+      { key: "notes", label: "Notes", type: "textarea" },
+    ],
+    [
+      {
+        unit: "EH-4B",
+        building: "Emerald Heights",
+        occupancy: "Occupied",
+        condition: "Good",
+        lastInspected: "2026-07-15",
+        notes: "",
+      },
+      {
+        unit: "RC-2A",
+        building: "Riverside Court",
+        occupancy: "Occupied",
+        condition: "Under repair",
+        lastInspected: "2026-08-01",
+        notes: "Bathroom leak reported, work order open.",
+      },
+    ],
+  ),
+
+  notices: def(
+    "notices",
+    "Notices",
+    "Notice",
+    "Announcements posted to owners and managers.",
+    [
+      { key: "title", label: "Title", inTable: true },
+      {
+        key: "audience",
+        label: "Audience",
+        type: "select",
+        options: ["All", "Owners", "Managers"],
+        inTable: true,
+      },
+      { key: "postedDate", label: "Posted", type: "date", inTable: true },
+      {
+        key: "priority",
+        label: "Priority",
+        type: "select",
+        options: ["Normal", "Important", "Urgent"],
+        inTable: true,
+        badge: true,
+      },
+      { key: "body", label: "Message", type: "textarea" },
+    ],
+    [
+      {
+        title: "Water supply maintenance - Aug 20",
+        audience: "All",
+        postedDate: "2026-08-15",
+        priority: "Important",
+        body: "Water supply will be interrupted 10am-2pm for tank cleaning across all buildings.",
+      },
+      {
+        title: "Updated maintenance approval process",
+        audience: "Managers",
+        postedDate: "2026-08-10",
+        priority: "Normal",
+        body: "All maintenance requests above 10,000 BDT now require owner approval before work begins.",
+      },
+    ],
+  ),
+
+  subscriptions: def(
+    "subscriptions",
+    "Subscription",
+    "Plan",
+    "Platform subscription plan and billing.",
+    [
+      { key: "plan", label: "Plan", inTable: true },
+      { key: "billingCycle", label: "Billing cycle", type: "select", options: ["Monthly", "Yearly"], inTable: true },
+      { key: "amount", label: "Amount", type: "money", inTable: true },
+      { key: "nextBillingDate", label: "Next billing date", type: "date", inTable: true },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["Active", "Past due", "Cancelled"],
+        inTable: true,
+        badge: true,
+      },
+    ],
+    [
+      {
+        plan: "EstateOps Pro",
+        billingCycle: "Monthly",
+        amount: 4900,
+        nextBillingDate: "2026-09-01",
+        status: "Active",
+      },
+    ],
+  ),
+
+  buildingAccounts: def(
+    "buildingAccounts",
+    "Building Accounts",
+    "Account",
+    "Per-building financial summary — balance, income and expenses.",
+    [
+      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
+      { key: "balance", label: "Current balance", type: "money", inTable: true },
+      { key: "monthlyIncome", label: "Monthly income", type: "money", inTable: true },
+      { key: "monthlyExpense", label: "Monthly expense", type: "money", inTable: true },
+      { key: "lastReconciled", label: "Last reconciled", type: "date", inTable: true },
+    ],
+    [
+      {
+        building: "Emerald Heights",
+        balance: 452000,
+        monthlyIncome: 189000,
+        monthlyExpense: 83000,
+        lastReconciled: "2026-08-01",
+      },
+      {
+        building: "Slate Tower",
+        balance: 611000,
+        monthlyIncome: 296000,
+        monthlyExpense: 142000,
+        lastReconciled: "2026-08-01",
+      },
+    ],
+  ),
+
+
+
+
+
+
 };
 
 export const resourceKeys = Object.keys(resources);
