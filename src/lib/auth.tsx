@@ -45,8 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (storedAdminRefreshToken) {
         try {
-          const result = await adminApi.refreshToken({ refreshToken: storedAdminRefreshToken });
-          tokenStore.setAdmin(result.accessToken, storedAdminRefreshToken);
+       const result = await adminApi.refreshToken({ refreshToken: storedAdminRefreshToken });
+tokenStore.setAdmin(result.accessToken, result.refreshToken);
           setAdmin({ token: result.accessToken, admin: readProfile(ADMIN_PROFILE_KEY) });
         } catch {
           window.localStorage.removeItem(ADMIN_REFRESH_KEY);

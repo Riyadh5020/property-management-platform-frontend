@@ -75,11 +75,11 @@ async function tryRefreshAdminToken(): Promise<string | null> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const result = await apiRequest<{ accessToken: string }>("/admins/refresh-token", {
-          method: "POST",
-          body: { refreshToken: storedRefreshToken },
-        });
-        tokenStore.setAdmin(result.accessToken, storedRefreshToken);
+        const result = await apiRequest<{ accessToken: string; refreshToken: string }>("/admins/refresh-token", {
+  method: "POST",
+  body: { refreshToken: storedRefreshToken },
+});
+tokenStore.setAdmin(result.accessToken, result.refreshToken);
         return result.accessToken;
       } catch {
         tokenStore.setAdmin(null, null);
@@ -212,8 +212,8 @@ export function toList<T>(value: unknown): T[] {
 export const adminApi = {
   login: (body: { email: string; password: string }) =>
     apiRequest<AuthResult>("/admins/login", { method: "POST", body }),
-  refreshToken: (body: { refreshToken: string }) =>
-    apiRequest<{ accessToken: string }>("/admins/refresh-token", { method: "POST", body }),
+ refreshToken: (body: { refreshToken: string }) =>
+  apiRequest<{ accessToken: string; refreshToken: string }>("/admins/refresh-token", { method: "POST", body }),
   listAdmins: () => apiRequest<unknown>("/admins", { auth: "admin" }).then(toList<ApiAdmin>),
   createAdmin: (body: {
     firstName: string;

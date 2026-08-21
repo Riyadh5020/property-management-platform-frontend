@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { adminApi, type AccountStatus, type AdminRole, type ApiAdmin } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin/admins")({
   head: () => ({
@@ -66,6 +67,19 @@ function AdminAdminsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ApiAdmin | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+const auth = useAuth();
+const actingRole = auth.admin?.admin?.role;
+const targetRoleForCreate: AdminRole = actingRole === "superAdmin" ? "owner" : "manager";
+
+const navigate = useNavigate();
+
+useEffect(() => {
+  if (auth.ready && actingRole === "manager") {
+    navigate({ to: "/dashboard", replace: true });
+  }
+}, [auth.ready, actingRole, navigate]);
+
+
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,11 +97,11 @@ function AdminAdminsPage() {
     void load();
   }, [load]);
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm({ ...emptyForm });
-    setOpen(true);
-  };
+ const openCreate = () => {
+  setEditing(null);
+  setForm({ ...emptyForm, role: targetRoleForCreate });
+  setOpen(true);
+};
 
   const openEdit = (admin: ApiAdmin) => {
     setEditing(admin);
@@ -281,24 +295,35 @@ function AdminAdminsPage() {
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select
-                value={form.role}
-                onValueChange={(value) => setForm({ ...form, role: value as AdminRole })}
-              >
-                <SelectTrigger id="role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+
+                       <div className="space-y-2">
+              <Label>Role</Label>
+              {editing ? (
+                <Select
+                  value={form.role}
+                  onValueChange={(value) => setForm({ ...form, role: value as AdminRole })}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  Will be created as <span className="font-medium text-foreground">{targetRoleForCreate}</span> — role is determined by your account type.
+                </p>
+              )}
             </div>
+
+
+
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                 Cancel
