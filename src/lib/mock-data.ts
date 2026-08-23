@@ -4,7 +4,7 @@
  * a matter of replacing the store calls in src/lib/store.ts.
  */
 
-export type FieldType = "text" | "number" | "money" | "date" | "select" | "textarea";
+export type FieldType = "text" | "number" | "money" | "date" | "select" | "textarea" | "entity-select";
 
 export interface FieldDef {
   key: string;
@@ -14,6 +14,10 @@ export interface FieldDef {
   inTable?: boolean;
   badge?: boolean;
   placeholder?: string;
+  sourceResource?: string;
+  labelKey?: string;
+  required?: boolean;
+  ownerEditable?: boolean;
 }
 
 export interface ResourceDef {
@@ -23,6 +27,7 @@ export interface ResourceDef {
   singular: string;
   fields: FieldDef[];
   seed: Record<string, unknown>[];
+  apiBacked?: boolean;
 }
 
 export type Row = Record<string, unknown> & { id: string };
@@ -41,66 +46,122 @@ function def(
 }
 
 export const resources: Record<string, ResourceDef> = {
-  buildings: def(
-    "buildings",
-    "Buildings",
-    "Building",
-    "Register buildings, track floors and overall occupancy.",
-    [
-      { key: "name", label: "Building name", inTable: true },
-      { key: "address", label: "Address", inTable: true },
-      { key: "floors", label: "Floors", type: "number", inTable: true },
-      { key: "totalUnits", label: "Total units", type: "number", inTable: true },
+   properties: {
+    key: "properties",
+    title: "Properties",
+    singular: "Property",
+    description: "Properties on the platform — live backend, superAdmin-managed.",
+    apiBacked: true,
+    fields: [
+          { key: "title", label: "Title", inTable: true, required: true },
       {
         key: "type",
         label: "Type",
         type: "select",
-        options: ["Residential", "Commercial", "Mixed use"],
+        options: ["apartment", "house", "villa", "office", "shop", "land"],
+        inTable: true,
+        required: true,
+      },
+      { key: "listingType", label: "Listing type", type: "select", options: ["rent", "sale"], inTable: true, required: true },
+      { key: "price", label: "Price", type: "money", inTable: true, required: true },
+      { key: "currency", label: "Currency", placeholder: "USD" },
+      { key: "address", label: "Address", inTable: true, required: true },
+      { key: "city", label: "City", inTable: true, required: true },
+      { key: "state", label: "State", ownerEditable: true },
+      { key: "country", label: "Country", inTable: true, required: true },
+
+
+
+{ key: "postalCode", label: "Postal code", ownerEditable: true },      { key: "latitude", label: "Latitude", type: "number" },
+      { key: "longitude", label: "Longitude", type: "number" },
+{ key: "bedrooms", label: "Bedrooms", type: "number", ownerEditable: true },      { key: "bathrooms", label: "Bathrooms", type: "number", ownerEditable: true },
+{ key: "areaSize", label: "Area size", type: "number", ownerEditable: true },      { key: "areaUnit", label: "Area unit", placeholder: "sqft" },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["draft", "active", "inactive", "sold", "rented"],
         inTable: true,
         badge: true,
       },
-      { key: "manager", label: "Building manager", inTable: true },
-      { key: "notes", label: "Notes", type: "textarea" },
+      {
+        key: "ownerId",
+        label: "Owner",
+        type: "entity-select",
+        sourceResource: "ownerAccounts",
+        labelKey: "displayLabel",
+        inTable: true,
+        required: true,
+      },
+{ key: "description", label: "Description", type: "textarea", ownerEditable: true },
+    ],    seed: [],
+  },
+
+  buildings: {
+    key: "buildings",
+    title: "Buildings",
+    singular: "Building",
+    description: "Buildings under a property — live backend, superAdmin-managed.",
+    apiBacked: true,
+    fields: [
+      {
+        key: "propertyId",
+        label: "Property",
+        type: "entity-select",
+        sourceResource: "properties",
+        labelKey: "title",
+        inTable: true,
+        required: true,
+      },
+      { key: "name", label: "Building name", inTable: true, required: true },      { key: "buildingNumber", label: "Building number" },
+      { key: "floors", label: "Floors", type: "number", inTable: true },
+      { key: "totalUnits", label: "Total units", type: "number", inTable: true },
+      { key: "totalArea", label: "Total area", type: "number" },
+{ key: "areaUnit", label: "Area unit", placeholder: "sqft", ownerEditable: true },      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["draft", "active", "inactive", "maintenance"],
+        inTable: true,
+        badge: true,
+      },
+      { key: "description", label: "Description", type: "textarea" },
     ],
-    [
+    seed: [],
+  },
+
+  floors: {
+    key: "floors",
+    title: "Floors",
+    singular: "Floor",
+    description: "Floors under a building — live backend, superAdmin-managed.",
+    apiBacked: true,
+    fields: [
       {
-        name: "Emerald Heights",
-        address: "12 Gulshan Ave, Dhaka",
-        floors: 12,
-        totalUnits: 48,
-        type: "Residential",
-        manager: "Rashed Karim",
-        notes: "Premium residential tower with rooftop garden.",
+        key: "buildingId",
+        label: "Building",
+        type: "entity-select",
+        sourceResource: "buildings",
+        labelKey: "name",
+        inTable: true,
+        required: true,
       },
+      { key: "floorNumber", label: "Floor number", type: "number", inTable: true, required: true },      { key: "name", label: "Floor name" },
+      { key: "totalUnits", label: "Total units", type: "number", inTable: true },
+      { key: "totalArea", label: "Total area", type: "number" },
+      { key: "areaUnit", label: "Area unit", placeholder: "sqft" },
       {
-        name: "Slate Tower",
-        address: "88 Banani Rd 11, Dhaka",
-        floors: 18,
-        totalUnits: 72,
-        type: "Mixed use",
-        manager: "Nusrat Jahan",
-        notes: "Retail on floors 1-3, offices above.",
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["draft", "active", "inactive", "maintenance"],
+        inTable: true,
+        badge: true,
       },
-      {
-        name: "Riverside Court",
-        address: "5 Dhanmondi Lake Rd, Dhaka",
-        floors: 8,
-        totalUnits: 32,
-        type: "Residential",
-        manager: "Imran Hossain",
-        notes: "",
-      },
-      {
-        name: "Uttara Business Park",
-        address: "Sector 7, Uttara, Dhaka",
-        floors: 10,
-        totalUnits: 40,
-        type: "Commercial",
-        manager: "Farhana Akter",
-        notes: "Corporate tenants only.",
-      },
+      { key: "description", label: "Description", type: "textarea" },
     ],
-  ),
+    seed: [],
+  },
 
   units: def(
     "units",

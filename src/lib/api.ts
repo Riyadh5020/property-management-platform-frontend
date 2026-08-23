@@ -234,3 +234,159 @@ export const adminApi = {
       auth: "admin",
     }),
 };
+
+/* ------------------------------------------------------------------ */
+/* Property / Building / Floor endpoints                               */
+/* ------------------------------------------------------------------ */
+
+export type PropertyListingType = "rent" | "sale";
+export type PropertyStatus = "draft" | "active" | "inactive" | "sold" | "rented";
+export type BuildingStatus = "draft" | "active" | "inactive" | "maintenance";
+export type FloorStatus = BuildingStatus;
+
+export interface ApiProperty {
+  id: string;
+  title: string;
+  description?: string | null;
+  type: string;
+  listingType: PropertyListingType;
+  price: number;
+  currency?: string;
+  address: string;
+  city: string;
+  state?: string | null;
+  country: string;
+  postalCode?: string | null;
+  latitude: number;
+  longitude: number;
+  bedrooms: number;
+  bathrooms: number;
+  areaSize: number;
+  areaUnit: string;
+  amenities?: Record<string, unknown>;
+  images?: string[];
+  status: PropertyStatus;
+  ownerId: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ApiBuilding {
+  id: string;
+  propertyId: string;
+  name: string;
+  buildingNumber?: string | null;
+  floors: number;
+  totalUnits: number;
+  totalArea: number;
+  areaUnit: string;
+  description?: string | null;
+  status: BuildingStatus;
+  amenities?: Record<string, unknown>;
+  images?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ApiFloor {
+  id: string;
+  buildingId: string;
+  floorNumber: number;
+  name?: string | null;
+  totalUnits: number;
+  totalArea: number;
+  areaUnit: string;
+  description?: string | null;
+  amenities?: Record<string, unknown>;
+  status: FloorStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ListParams {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+}
+
+function toQuery<T extends object>(params: T = {} as T): string {
+  const usp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
+    if (value !== undefined && value !== null && value !== "") usp.set(key, String(value));
+  }
+  const qs = usp.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export interface ListResult<T> {
+  items: T[];
+  total: number;
+}
+
+function toListResult<T>(payload: unknown): ListResult<T> {
+  const items = toList<T>(payload);
+  const pagination =
+    payload && typeof payload === "object" ? (payload as Record<string, unknown>)["pagination"] : undefined;
+  const total =
+    pagination && typeof pagination === "object"
+      ? Number((pagination as Record<string, unknown>)["total"] ?? items.length)
+      : items.length;
+  return { items, total };
+}
+
+
+
+
+export const propertyApi = {
+  list: (params: ListParams & { status?: string; type?: string; listingType?: string } = {}) =>
+    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) => toListResult<ApiProperty>(res)),
+  get: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { auth: "admin" }),
+  create: (body: Partial<ApiProperty>) =>
+    apiRequest<ApiProperty>("/properties/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Partial<ApiProperty>) =>
+    apiRequest<ApiProperty>(`/properties/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) =>
+    apiRequest<ApiProperty>(`/properties/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+export const buildingApi = {
+  list: (params: ListParams & { status?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/buildings${toQuery(params)}`, { auth: "admin" }).then((res) => toListResult<ApiBuilding>(res)),
+  get: (id: string) => apiRequest<ApiBuilding>(`/buildings/${id}`, { auth: "admin" }),
+  create: (body: Partial<ApiBuilding>) =>
+    apiRequest<ApiBuilding>("/buildings/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Partial<ApiBuilding>) =>
+    apiRequest<ApiBuilding>(`/buildings/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) =>
+    apiRequest<ApiBuilding>(`/buildings/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+export const floorApi = {
+  list: (params: ListParams & { status?: string; buildingId?: string } = {}) =>
+    apiRequest<unknown>(`/floors${toQuery(params)}`, { auth: "admin" }).then((res) => toListResult<ApiFloor>(res)),
+  get: (id: string) => apiRequest<ApiFloor>(`/floors/${id}`, { auth: "admin" }),
+  create: (body: Partial<ApiFloor>) =>
+    apiRequest<ApiFloor>("/floors/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Partial<ApiFloor>) =>
+    apiRequest<ApiFloor>(`/floors/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) =>
+    apiRequest<ApiFloor>(`/floors/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

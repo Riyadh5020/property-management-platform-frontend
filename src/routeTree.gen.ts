@@ -18,11 +18,13 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EmergencyContactsRouteImport } from './routes/emergency-contacts'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as FlatStatusRouteImport } from './routes/flat-status'
+import { Route as FloorsRouteImport } from './routes/floors'
 import { Route as LeasesRouteImport } from './routes/leases'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
+import { Route as PropertiesRouteImport } from './routes/properties'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
@@ -80,6 +82,11 @@ const FlatStatusRoute = FlatStatusRouteImport.update({
   path: '/flat-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorsRoute = FloorsRouteImport.update({
+  id: '/floors',
+  path: '/floors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeasesRoute = LeasesRouteImport.update({
   id: '/leases',
   path: '/leases',
@@ -103,6 +110,11 @@ const OwnersRoute = OwnersRouteImport.update({
 const ParkingRoute = ParkingRouteImport.update({
   id: '/parking',
   path: '/parking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertiesRoute = PropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -171,11 +183,13 @@ export interface FileRoutesByFullPath {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -198,11 +212,13 @@ export interface FileRoutesByTo {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -226,11 +242,13 @@ export interface FileRoutesById {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -255,11 +273,13 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -282,11 +302,13 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -309,11 +331,13 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -337,11 +361,13 @@ export interface RootRouteChildren {
   EmergencyContactsRoute: typeof EmergencyContactsRoute
   ExpensesRoute: typeof ExpensesRoute
   FlatStatusRoute: typeof FlatStatusRoute
+  FloorsRoute: typeof FloorsRoute
   LeasesRoute: typeof LeasesRoute
   MaintenanceRoute: typeof MaintenanceRoute
   NoticesRoute: typeof NoticesRoute
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
+  PropertiesRoute: typeof PropertiesRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
@@ -420,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlatStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/floors': {
+      id: '/floors'
+      path: '/floors'
+      fullPath: '/floors'
+      preLoaderRoute: typeof FloorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leases': {
       id: '/leases'
       path: '/leases'
@@ -453,6 +486,13 @@ declare module '@tanstack/react-router' {
       path: '/parking'
       fullPath: '/parking'
       preLoaderRoute: typeof ParkingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/properties': {
+      id: '/properties'
+      path: '/properties'
+      fullPath: '/properties'
+      preLoaderRoute: typeof PropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -545,11 +585,13 @@ const rootRouteChildren: RootRouteChildren = {
   EmergencyContactsRoute: EmergencyContactsRoute,
   ExpensesRoute: ExpensesRoute,
   FlatStatusRoute: FlatStatusRoute,
+  FloorsRoute: FloorsRoute,
   LeasesRoute: LeasesRoute,
   MaintenanceRoute: MaintenanceRoute,
   NoticesRoute: NoticesRoute,
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
+  PropertiesRoute: PropertiesRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,

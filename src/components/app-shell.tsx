@@ -1,12 +1,11 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  AlertTriangle,
   Building2,
   CarFront,
   ClipboardList,
   CreditCard,
-  FileSignature,
-  Gauge,
+  Home,
+  Layers,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -16,14 +15,11 @@ import {
   Receipt,
   Settings,
   Shield,
-  ShieldCheck,
   Sparkles,
   Users,
-  UserCog,
   Wallet,
   Wrench,
-  Warehouse,
-  X,
+  X
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -43,6 +39,14 @@ const managerNav: NavSection[] = [
   {
     group: "Overview",
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+    {
+    group: "Portfolio",
+    items: [
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/buildings", label: "Buildings", icon: Building2 },
+      { to: "/floors", label: "Floors", icon: Layers },
+    ],
   },
   {
     group: "Operations",
@@ -69,6 +73,15 @@ const ownerNav: NavSection[] = [
   {
     group: "Overview",
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+
+  {
+    group: "Portfolio",
+    items: [
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/buildings", label: "Buildings", icon: Building2 },
+      { to: "/floors", label: "Floors", icon: Layers },
+    ],
   },
   {
     group: "Operations",
@@ -110,7 +123,9 @@ const superAdminConsoleNav: NavSection[] = [
     group: "Platform",
     items: [
       { to: "/reports", label: "Reports", icon: PieChart },
-      { to: "/buildings", label: "Property update", icon: Building2 },
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/buildings", label: "Buildings", icon: Building2 },
+      { to: "/floors", label: "Floors", icon: Layers },
       { to: "/building-accounts", label: "Building accounts", icon: CreditCard },
       { to: "/subscriptions", label: "Subscription", icon: Sparkles },
       { to: "/notices", label: "Notices", icon: Megaphone },
