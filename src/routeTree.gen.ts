@@ -25,6 +25,7 @@ import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
 import { Route as PropertiesRouteImport } from './routes/properties'
+import { Route as PropertyRequestsRouteImport } from './routes/property-requests'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
@@ -36,6 +37,7 @@ import { Route as VisitorsRouteImport } from './routes/visitors'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as FloorsFloorIdUnitsRouteImport } from './routes/floors_.$floorId.units'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -117,6 +119,11 @@ const PropertiesRoute = PropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PropertyRequestsRoute = PropertyRequestsRouteImport.update({
+  id: '/property-requests',
+  path: '/property-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -172,6 +179,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorsFloorIdUnitsRoute = FloorsFloorIdUnitsRouteImport.update({
+  id: '/floors_/$floorId/units',
+  path: '/floors/$floorId/units',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -190,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -201,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
+  '/floors/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -219,6 +233,7 @@ export interface FileRoutesByTo {
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -230,6 +245,7 @@ export interface FileRoutesByTo {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
+  '/floors/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -249,6 +265,7 @@ export interface FileRoutesById {
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -260,6 +277,7 @@ export interface FileRoutesById {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
+  '/floors_/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -280,6 +298,7 @@ export interface FileRouteTypes {
     | '/owners'
     | '/parking'
     | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -291,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/login'
     | '/admin/'
+    | '/floors/$floorId/units'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -309,6 +329,7 @@ export interface FileRouteTypes {
     | '/owners'
     | '/parking'
     | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -320,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/login'
     | '/admin'
+    | '/floors/$floorId/units'
   id:
     | '__root__'
     | '/'
@@ -338,6 +360,7 @@ export interface FileRouteTypes {
     | '/owners'
     | '/parking'
     | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -349,6 +372,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/login'
     | '/admin/'
+    | '/floors_/$floorId/units'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -368,6 +392,7 @@ export interface RootRouteChildren {
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
   PropertiesRoute: typeof PropertiesRoute
+  PropertyRequestsRoute: typeof PropertyRequestsRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
@@ -379,6 +404,7 @@ export interface RootRouteChildren {
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  FloorsFloorIdUnitsRoute: typeof FloorsFloorIdUnitsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -495,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/property-requests': {
+      id: '/property-requests'
+      path: '/property-requests'
+      fullPath: '/property-requests'
+      preLoaderRoute: typeof PropertyRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports': {
       id: '/reports'
       path: '/reports'
@@ -572,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/floors_/$floorId/units': {
+      id: '/floors_/$floorId/units'
+      path: '/floors/$floorId/units'
+      fullPath: '/floors/$floorId/units'
+      preLoaderRoute: typeof FloorsFloorIdUnitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -592,6 +632,7 @@ const rootRouteChildren: RootRouteChildren = {
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
   PropertiesRoute: PropertiesRoute,
+  PropertyRequestsRoute: PropertyRequestsRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
@@ -603,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAdminsRoute: AdminAdminsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
+  FloorsFloorIdUnitsRoute: FloorsFloorIdUnitsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

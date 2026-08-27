@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { adminApi, buildingApi, floorApi, propertyApi } from "./api";
+import { adminApi, floorApi, propertyApi, unitApi } from "./api";
 import { useAuth } from "./auth";
 import { resources, type ResourceDef, type Row } from "./mock-data";
+
 const STORAGE_PREFIX = "pms.data.";
 const listeners = new Map<string, Set<() => void>>();
 
@@ -50,7 +51,7 @@ function subscribe(resource: string, fn: () => void) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Live-backend resources (Property / Building / Floor)                */
+/* Live-backend resources (Property / Floor / Unit)                    */
 /* ------------------------------------------------------------------ */
 
 type ApiAdapter = {
@@ -62,22 +63,25 @@ type ApiAdapter = {
 
 const apiAdapters: Record<string, ApiAdapter> = {
   properties: {
-    list: (params) => propertyApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
+    list: (params) =>
+      propertyApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
     create: (v) => propertyApi.create(v) as unknown as Promise<Record<string, unknown>>,
     update: (id, v) => propertyApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
     remove: (id) => propertyApi.remove(id).then(() => undefined),
   },
-  buildings: {
-    list: (params) => buildingApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
-    create: (v) => buildingApi.create(v) as unknown as Promise<Record<string, unknown>>,
-    update: (id, v) => buildingApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
-    remove: (id) => buildingApi.remove(id).then(() => undefined),
-  },
   floors: {
-    list: (params) => floorApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
+    list: (params) =>
+      floorApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
     create: (v) => floorApi.create(v) as unknown as Promise<Record<string, unknown>>,
     update: (id, v) => floorApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
     remove: (id) => floorApi.remove(id).then(() => undefined),
+  },
+  units: {
+    list: (params) =>
+      unitApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
+    create: (v) => unitApi.create(v) as unknown as Promise<Record<string, unknown>>,
+    update: (id, v) => unitApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
+    remove: (id) => unitApi.remove(id).then(() => undefined),
   },
   ownerAccounts: {
     list: () =>
@@ -152,14 +156,13 @@ export function useCollection(resource: string, filters?: Record<string, unknown
   const update = useCallback(
     async (id: string, values: Record<string, unknown>) => {
       if (adapter) {
-        await adapter.update(id, values);
+        const updated = await adapter.update(id, values);
         await refetch();
-        return;
+        return updated as Row;
       }
-      writeRows(
-        resource,
-        readRows(resource).map((row) => (row.id === id ? { ...row, ...values, id } : row)),
-      );
+      const next = readRows(resource).map((row) => (row.id === id ? { ...row, ...values, id } : row));
+      writeRows(resource, next);
+      return next.find((row) => row.id === id) as Row;
     },
     [resource, adapter, refetch],
   );
