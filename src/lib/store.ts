@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { adminApi, floorApi, propertyApi, unitApi } from "./api";
+import { useAuth } from "./auth";
 import { resources, type ResourceDef, type Row } from "./mock-data";
 
 const STORAGE_PREFIX = "pms.data.";
@@ -46,63 +48,160 @@ function subscribe(resource: string, fn: () => void) {
   return () => {
     set.delete(fn);
   };
-
 }
 
-export function useCollection(resource: string) {
+/* ------------------------------------------------------------------ */
+/* Live-backend resources (Property / Floor / Unit)                    */
+/* ------------------------------------------------------------------ */
+
+type ApiAdapter = {
+  list: (params?: Record<string, unknown>) => Promise<{ items: Record<string, unknown>[]; total: number }>;
+  create: (values: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  update: (id: string, values: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  remove: (id: string) => Promise<void>;
+};
+
+const apiAdapters: Record<string, ApiAdapter> = {
+  properties: {
+    list: (params) =>
+      propertyApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
+    create: (v) => propertyApi.create(v) as unknown as Promise<Record<string, unknown>>,
+    update: (id, v) => propertyApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
+    remove: (id) => propertyApi.remove(id).then(() => undefined),
+  },
+  floors: {
+    list: (params) =>
+      floorApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
+    create: (v) => floorApi.create(v) as unknown as Promise<Record<string, unknown>>,
+    update: (id, v) => floorApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
+    remove: (id) => floorApi.remove(id).then(() => undefined),
+  },
+  units: {
+    list: (params) =>
+      unitApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
+    create: (v) => unitApi.create(v) as unknown as Promise<Record<string, unknown>>,
+    update: (id, v) => unitApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
+    remove: (id) => unitApi.remove(id).then(() => undefined),
+  },
+  ownerAccounts: {
+    list: () =>
+      adminApi.listAdmins().then((list) => {
+        const items = list
+          .filter((a) => a.role === "owner")
+          .map((a) => ({
+            ...a,
+            displayLabel: `${[a.firstName, a.lastName].filter(Boolean).join(" ") || "Unnamed"} — ${a.email}`,
+          })) as unknown as Record<string, unknown>[];
+        return { items, total: items.length };
+      }),
+    create: async () => {
+      throw new Error("Owner accounts are managed from Administrators, not here.");
+    },
+    update: async () => {
+      throw new Error("Owner accounts are managed from Administrators, not here.");
+    },
+    remove: async () => {
+      throw new Error("Owner accounts are managed from Administrators, not here.");
+    },
+  },
+};
+
+export function useCollection(resource: string, filters?: Record<string, unknown>) {
+  const adapter = apiAdapters[resource];
   const [rows, setRows] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const { ready: authReady, admin } = useAuth();
+  const filtersKey = JSON.stringify(filters ?? {});
+
+  const refetch = useCallback(async () => {
+    if (!adapter) return;
+    const result = await adapter.list(filters);
+    setRows(result.items as Row[]);
+    setTotal(result.total);
+    setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adapter, filtersKey]);
 
   useEffect(() => {
+    if (adapter) {
+      if (!authReady || !admin?.token) return;
+      setIsFetching(true);
+      refetch()
+        .catch((err) => console.error(`Failed to load ${resource}`, err))
+        .finally(() => setIsFetching(false));
+      return;
+    }
     const sync = () => setRows(readRows(resource));
     sync();
     setLoaded(true);
     return subscribe(resource, sync);
-  }, [resource]);
+  }, [resource, adapter, refetch, authReady, admin?.token]);
 
   const create = useCallback(
-    (values: Record<string, unknown>) => {
+    async (values: Record<string, unknown>) => {
+      if (adapter) {
+        const created = await adapter.create(values);
+        await refetch();
+        return created as Row;
+      }
       const next: Row = { ...values, id: crypto.randomUUID() };
       writeRows(resource, [next, ...readRows(resource)]);
       return next;
     },
-    [resource],
+    [resource, adapter, refetch],
   );
 
   const update = useCallback(
-    (id: string, values: Record<string, unknown>) => {
-      writeRows(
-        resource,
-        readRows(resource).map((row) => (row.id === id ? { ...row, ...values, id } : row)),
-      );
+    async (id: string, values: Record<string, unknown>) => {
+      if (adapter) {
+        const updated = await adapter.update(id, values);
+        await refetch();
+        return updated as Row;
+      }
+      const next = readRows(resource).map((row) => (row.id === id ? { ...row, ...values, id } : row));
+      writeRows(resource, next);
+      return next.find((row) => row.id === id) as Row;
     },
-    [resource],
+    [resource, adapter, refetch],
   );
 
   const remove = useCallback(
-    (id: string) => {
+    async (id: string) => {
+      if (adapter) {
+        await adapter.remove(id);
+        await refetch();
+        return;
+      }
       writeRows(
         resource,
         readRows(resource).filter((row) => row.id !== id),
       );
     },
-    [resource],
+    [resource, adapter, refetch],
   );
 
-  const reset = useCallback(() => {
+  const reset = useCallback(async () => {
+    if (adapter) {
+      await refetch();
+      return;
+    }
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(storageKey(resource));
     }
     listeners.get(resource)?.forEach((fn) => fn());
     setRows(readRows(resource));
-  }, [resource]);
+  }, [resource, adapter, refetch]);
 
-  return { rows, loaded, create, update, remove, reset };
+  return { rows, loaded, isFetching, total, create, update, remove, reset, apiBacked: Boolean(adapter) };
 }
 
 export function resetAllDemoData() {
   if (typeof window === "undefined") return;
-  Object.keys(resources).forEach((key) => window.localStorage.removeItem(storageKey(key)));
+  Object.keys(resources).forEach((key) => {
+    if (!apiAdapters[key]) window.localStorage.removeItem(storageKey(key));
+  });
   listeners.forEach((set) => set.forEach((fn) => fn()));
 }
 

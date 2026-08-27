@@ -18,11 +18,14 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EmergencyContactsRouteImport } from './routes/emergency-contacts'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as FlatStatusRouteImport } from './routes/flat-status'
+import { Route as FloorsRouteImport } from './routes/floors'
 import { Route as LeasesRouteImport } from './routes/leases'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
+import { Route as PropertiesRouteImport } from './routes/properties'
+import { Route as PropertyRequestsRouteImport } from './routes/property-requests'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
@@ -34,6 +37,7 @@ import { Route as VisitorsRouteImport } from './routes/visitors'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as FloorsFloorIdUnitsRouteImport } from './routes/floors_.$floorId.units'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -80,6 +84,11 @@ const FlatStatusRoute = FlatStatusRouteImport.update({
   path: '/flat-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorsRoute = FloorsRouteImport.update({
+  id: '/floors',
+  path: '/floors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeasesRoute = LeasesRouteImport.update({
   id: '/leases',
   path: '/leases',
@@ -103,6 +112,16 @@ const OwnersRoute = OwnersRouteImport.update({
 const ParkingRoute = ParkingRouteImport.update({
   id: '/parking',
   path: '/parking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertiesRoute = PropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertyRequestsRoute = PropertyRequestsRouteImport.update({
+  id: '/property-requests',
+  path: '/property-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -160,6 +179,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorsFloorIdUnitsRoute = FloorsFloorIdUnitsRouteImport.update({
+  id: '/floors_/$floorId/units',
+  path: '/floors/$floorId/units',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -171,11 +195,14 @@ export interface FileRoutesByFullPath {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -187,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
+  '/floors/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -198,11 +226,14 @@ export interface FileRoutesByTo {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -214,6 +245,7 @@ export interface FileRoutesByTo {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
+  '/floors/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -226,11 +258,14 @@ export interface FileRoutesById {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -242,6 +277,7 @@ export interface FileRoutesById {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
+  '/floors_/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -255,11 +291,14 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -271,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/login'
     | '/admin/'
+    | '/floors/$floorId/units'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -282,11 +322,14 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -298,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/login'
     | '/admin'
+    | '/floors/$floorId/units'
   id:
     | '__root__'
     | '/'
@@ -309,11 +353,14 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -325,6 +372,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/login'
     | '/admin/'
+    | '/floors_/$floorId/units'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -337,11 +385,14 @@ export interface RootRouteChildren {
   EmergencyContactsRoute: typeof EmergencyContactsRoute
   ExpensesRoute: typeof ExpensesRoute
   FlatStatusRoute: typeof FlatStatusRoute
+  FloorsRoute: typeof FloorsRoute
   LeasesRoute: typeof LeasesRoute
   MaintenanceRoute: typeof MaintenanceRoute
   NoticesRoute: typeof NoticesRoute
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
+  PropertiesRoute: typeof PropertiesRoute
+  PropertyRequestsRoute: typeof PropertyRequestsRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
@@ -353,6 +404,7 @@ export interface RootRouteChildren {
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  FloorsFloorIdUnitsRoute: typeof FloorsFloorIdUnitsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -420,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlatStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/floors': {
+      id: '/floors'
+      path: '/floors'
+      fullPath: '/floors'
+      preLoaderRoute: typeof FloorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leases': {
       id: '/leases'
       path: '/leases'
@@ -453,6 +512,20 @@ declare module '@tanstack/react-router' {
       path: '/parking'
       fullPath: '/parking'
       preLoaderRoute: typeof ParkingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/properties': {
+      id: '/properties'
+      path: '/properties'
+      fullPath: '/properties'
+      preLoaderRoute: typeof PropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/property-requests': {
+      id: '/property-requests'
+      path: '/property-requests'
+      fullPath: '/property-requests'
+      preLoaderRoute: typeof PropertyRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -532,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/floors_/$floorId/units': {
+      id: '/floors_/$floorId/units'
+      path: '/floors/$floorId/units'
+      fullPath: '/floors/$floorId/units'
+      preLoaderRoute: typeof FloorsFloorIdUnitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -545,11 +625,14 @@ const rootRouteChildren: RootRouteChildren = {
   EmergencyContactsRoute: EmergencyContactsRoute,
   ExpensesRoute: ExpensesRoute,
   FlatStatusRoute: FlatStatusRoute,
+  FloorsRoute: FloorsRoute,
   LeasesRoute: LeasesRoute,
   MaintenanceRoute: MaintenanceRoute,
   NoticesRoute: NoticesRoute,
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
+  PropertiesRoute: PropertiesRoute,
+  PropertyRequestsRoute: PropertyRequestsRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
@@ -561,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAdminsRoute: AdminAdminsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
+  FloorsFloorIdUnitsRoute: FloorsFloorIdUnitsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

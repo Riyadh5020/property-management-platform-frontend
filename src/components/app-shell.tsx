@@ -1,13 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  AlertTriangle,
   Building2,
   CarFront,
   ClipboardList,
   CreditCard,
-  FileSignature,
-  Gauge,
+  FileQuestion,
+  Home,
+  Layers,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Megaphone,
   Menu,
@@ -16,13 +17,10 @@ import {
   Receipt,
   Settings,
   Shield,
-  ShieldCheck,
   Sparkles,
   Users,
-  UserCog,
   Wallet,
   Wrench,
-  Warehouse,
   X,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -43,6 +41,14 @@ const managerNav: NavSection[] = [
   {
     group: "Overview",
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    group: "Portfolio",
+    items: [
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/floors", label: "Floors", icon: Layers },
+      { to: "/units", label: "Units", icon: LayoutGrid },
+    ],
   },
   {
     group: "Operations",
@@ -71,6 +77,14 @@ const ownerNav: NavSection[] = [
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
+    group: "Portfolio",
+    items: [
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/floors", label: "Floors", icon: Layers },
+      { to: "/units", label: "Units", icon: LayoutGrid },
+    ],
+  },
+  {
     group: "Operations",
     items: [
       { to: "/expenses", label: "Expenses", icon: Wallet },
@@ -82,11 +96,12 @@ const ownerNav: NavSection[] = [
       { to: "/emergency-contacts", label: "Emergency contacts", icon: PhoneCall },
     ],
   },
-  {
+    {
     group: "Ownership",
     items: [
       { to: "/flat-status", label: "Flat status", icon: Building2 },
       { to: "/admin/admins", label: "Manage managers", icon: Shield },
+      { to: "/property-requests", label: "Property requests", icon: FileQuestion },
     ],
   },
   {
@@ -106,11 +121,14 @@ const superAdminConsoleNav: NavSection[] = [
       { to: "/admin/admins", label: "Administrators", icon: Shield },
     ],
   },
-  {
+    {
     group: "Platform",
     items: [
       { to: "/reports", label: "Reports", icon: PieChart },
-      { to: "/buildings", label: "Property update", icon: Building2 },
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/property-requests", label: "Property requests", icon: FileQuestion },
+      { to: "/floors", label: "Floors", icon: Layers },
+      { to: "/units", label: "Units", icon: LayoutGrid },
       { to: "/building-accounts", label: "Building accounts", icon: CreditCard },
       { to: "/subscriptions", label: "Subscription", icon: Sparkles },
       { to: "/notices", label: "Notices", icon: Megaphone },
@@ -125,7 +143,7 @@ export function AppShell({
   children: ReactNode;
   variant?: "workspace" | "console";
 }) {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -133,11 +151,7 @@ export function AppShell({
   const role = session?.admin?.role;
   const isConsole = variant === "console" || role === "superAdmin";
 
-  const nav = isConsole
-    ? superAdminConsoleNav
-    : role === "owner"
-      ? ownerNav
-      : managerNav;
+  const nav = isConsole ? superAdminConsoleNav : role === "owner" ? ownerNav : managerNav;
 
   useEffect(() => {
     setOpen(false);
