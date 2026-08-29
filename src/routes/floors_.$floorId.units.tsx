@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { floorApi, unitApi, type ApiFloor, type ApiUnit, type UnitStatus, type UnitType } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/floors_/$floorId/units")({
   component: FloorUnitsPage,
@@ -60,13 +61,19 @@ function toDraft(u: ApiUnit): DraftUnit {
   };
 }
 
+const notApplicable = (type: UnitType) => type === "parking" || type === "common";
+
 function FloorUnitsPage() {
   const { floorId } = Route.useParams();
+  const { admin } = useAuth();
+  const role = admin?.admin?.role;
+
   const [floor, setFloor] = useState<ApiFloor | null>(null);
-  const [units, setUnits] = useState<ApiUnit[]>([]);
   const [rows, setRows] = useState<DraftUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
+  const [capDraft, setCapDraft] = useState("");
+  const [savingCap, setSavingCap] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -76,7 +83,6 @@ function FloorUnitsPage() {
         unitApi.list({ floorId, limit: 200 }),
       ]);
       setFloor(floorResult);
-      setUnits(unitsResult.items);
       setRows(unitsResult.items.map(toDraft));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load floor units");
@@ -91,9 +97,34 @@ function FloorUnitsPage() {
   }, [floorId]);
 
   const cap = floor?.totalUnits ?? null;
-  const atCap = cap !== null && rows.length >= cap;
+  const capIsSet = cap !== null;
+  const atCap = capIsSet && rows.length >= cap;
+  const canAdd = capIsSet && !atCap;
+
+  const saveCap = async () => {
+    const n = Number(capDraft);
+    if (!capDraft || !Number.isInteger(n) || n <= 0) {
+      toast.error("Enter a whole number greater than 0");
+      return;
+    }
+    setSavingCap(true);
+    try {
+      const updated = await floorApi.update(floorId, { totalUnits: n });
+      setFloor(updated);
+      setCapDraft("");
+      toast.success("Unit cap set");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not set unit cap");
+    } finally {
+      setSavingCap(false);
+    }
+  };
 
   const addRow = () => {
+    if (!capIsSet) {
+      toast.error("This floor has no unit limit set yet.");
+      return;
+    }
     if (atCap) {
       toast.error(`This floor is capped at ${cap} unit${cap === 1 ? "" : "s"}.`);
       return;
@@ -162,7 +193,6 @@ function FloorUnitsPage() {
       setSavingIndex(null);
     }
   };
-const notApplicable = (type: UnitType) => type === "parking" || type === "common";
 
   return (
     <AppShell>
@@ -176,16 +206,33 @@ const notApplicable = (type: UnitType) => type === "parking" || type === "common
       <PageHeader
         title={floor ? `Units — Floor ${floor.floorNumber}${floor.name ? ` (${floor.name})` : ""}` : "Units"}
         description={
-          cap !== null
+          capIsSet
             ? `${rows.length} of ${cap} unit${cap === 1 ? "" : "s"} used on this floor.`
-            : "No unit cap set on this floor — you can add as many as you like."
+            : "This floor doesn't have a unit limit yet."
         }
         actions={
-          <Button size="sm" onClick={addRow} disabled={atCap}>
+          <Button size="sm" onClick={addRow} disabled={!canAdd}>
             <Plus className="size-4" /> Add unit
           </Button>
         }
       />
+
+   {!loading && !capIsSet ? (
+  <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    <span>Set how many units this floor can hold before anyone can add units.</span>
+    <Input
+      type="number"
+      min={1}
+      value={capDraft}
+      onChange={(e) => setCapDraft(e.target.value)}
+      placeholder="e.g. 6"
+      className="h-8 w-24"
+    />
+    <Button size="sm" onClick={() => void saveCap()} disabled={savingCap}>
+      Save cap
+    </Button>
+  </div>
+) : null}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="overflow-x-auto">
@@ -214,7 +261,7 @@ const notApplicable = (type: UnitType) => type === "parking" || type === "common
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
-                    No units yet. Click "Add unit" to create one.
+                    {capIsSet ? 'No units yet. Click "Add unit" to create one.' : "No units yet."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -251,55 +298,64 @@ const notApplicable = (type: UnitType) => type === "parking" || type === "common
                       />
                     </TableCell>
                     <TableCell>
-  {notApplicable(row.unitType) ? (
-    <span className="text-xs text-muted-foreground">—</span>
-  ) : (
-    <Input
-      type="number"
-      value={row.bedrooms}
-      onChange={(e) => updateRow(index, { bedrooms: e.target.value })}
-      className="h-8 w-16"
-    />
-  )}
-</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={row.bathrooms}
-                        onChange={(e) => updateRow(index, { bathrooms: e.target.value })}
-                        className="h-8 w-16"
-                        disabled={row.unitType === "parking" || row.unitType === "common"}
-                      />
+                      {notApplicable(row.unitType) ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <Input
+                          type="number"
+                          value={row.bedrooms}
+                          onChange={(e) => updateRow(index, { bedrooms: e.target.value })}
+                          className="h-8 w-16"
+                        />
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={row.hasKitchen ? "true" : "false"}
-                        onValueChange={(v) => updateRow(index, { hasKitchen: v === "true" })}
-                        disabled={row.unitType === "parking" || row.unitType === "common"}
-                      >
-                        <SelectTrigger className="h-8 w-20">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">Yes</SelectItem>
-                          <SelectItem value="false">No</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {notApplicable(row.unitType) ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <Input
+                          type="number"
+                          value={row.bathrooms}
+                          onChange={(e) => updateRow(index, { bathrooms: e.target.value })}
+                          className="h-8 w-16"
+                        />
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={row.hasBalcony ? "true" : "false"}
-                        onValueChange={(v) => updateRow(index, { hasBalcony: v === "true" })}
-                        disabled={row.unitType === "parking" || row.unitType === "common"}
-                      >
-                        <SelectTrigger className="h-8 w-20">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">Yes</SelectItem>
-                          <SelectItem value="false">No</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {notApplicable(row.unitType) ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <Select
+                          value={row.hasKitchen ? "true" : "false"}
+                          onValueChange={(v) => updateRow(index, { hasKitchen: v === "true" })}
+                        >
+                          <SelectTrigger className="h-8 w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Yes</SelectItem>
+                            <SelectItem value="false">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {notApplicable(row.unitType) ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <Select
+                          value={row.hasBalcony ? "true" : "false"}
+                          onValueChange={(v) => updateRow(index, { hasBalcony: v === "true" })}
+                        >
+                          <SelectTrigger className="h-8 w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Yes</SelectItem>
+                            <SelectItem value="false">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Input
