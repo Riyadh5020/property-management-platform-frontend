@@ -7,11 +7,11 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { floorApi, unitApi, type ApiFloor, type ApiUnit, type UnitStatus, type UnitType } from "@/lib/api";
@@ -162,6 +162,7 @@ function FloorUnitsPage() {
       setSavingIndex(null);
     }
   };
+const notApplicable = (type: UnitType) => type === "parking" || type === "common";
 
   return (
     <AppShell>
@@ -250,14 +251,17 @@ function FloorUnitsPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Input
-                        type="number"
-                        value={row.bedrooms}
-                        onChange={(e) => updateRow(index, { bedrooms: e.target.value })}
-                        className="h-8 w-16"
-                        disabled={row.unitType === "parking" || row.unitType === "common"}
-                      />
-                    </TableCell>
+  {notApplicable(row.unitType) ? (
+    <span className="text-xs text-muted-foreground">—</span>
+  ) : (
+    <Input
+      type="number"
+      value={row.bedrooms}
+      onChange={(e) => updateRow(index, { bedrooms: e.target.value })}
+      className="h-8 w-16"
+    />
+  )}
+</TableCell>
                     <TableCell>
                       <Input
                         type="number"

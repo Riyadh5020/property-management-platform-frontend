@@ -360,28 +360,42 @@ export function ResourcePage({
                         {renderCell(f, row[f.key], refLabel)}
                       </TableCell>
                     ))}
-                    <TableCell className="text-right">
-  {canEditRow(row) ? (
-    <div className="flex justify-end gap-1">
-      {resource === "floors" ? (
-        <Button asChild variant="ghost" size="sm">
-<Link to="/floors/$floorId/units" params={{ floorId: row.id }}>            Manage units
-          </Link>
-        </Button>
+                  <TableCell className="text-right">
+  {resource === "floors" ? (
+    <div className="flex items-center justify-end gap-2">
+      <Button asChild size="sm" variant="default">
+        <Link to="/floors/$floorId/units" params={{ floorId: row.id }}>
+          Manage units
+        </Link>
+      </Button>
+      {canEditRow(row) ? (
+        <>
+          <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit floor">
+            <Pencil className="size-4" />
+          </Button>
+          {canDeleteRow(row) ? (
+            <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete floor">
+              <Trash2 className="size-4 text-destructive" />
+            </Button>
+          ) : null}
+        </>
       ) : null}
+    </div>
+  ) : canEditRow(row) ? (
+    <div className="flex justify-end gap-1">
       <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit">
         <Pencil className="size-4" />
       </Button>
-                          {canDeleteRow(row) ? (
-                            <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete">
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">View only</span>
-                      )}
-                    </TableCell>
+      {canDeleteRow(row) ? (
+        <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete">
+          <Trash2 className="size-4 text-destructive" />
+        </Button>
+      ) : null}
+    </div>
+  ) : (
+    <span className="text-xs text-muted-foreground">View only</span>
+  )}
+</TableCell>
                   </TableRow>
                 ))
               )}
