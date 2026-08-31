@@ -37,7 +37,7 @@ import { Route as VisitorsRouteImport } from './routes/visitors'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as FloorsFloorIdUnitsRouteImport } from './routes/floors_.$floorId.units'
+import { Route as UnitsFloorIdRouteImport } from './routes/units_.$floorId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -179,9 +179,9 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FloorsFloorIdUnitsRoute = FloorsFloorIdUnitsRouteImport.update({
-  id: '/floors_/$floorId/units',
-  path: '/floors/$floorId/units',
+const UnitsFloorIdRoute = UnitsFloorIdRouteImport.update({
+  id: '/units_/$floorId',
+  path: '/units/$floorId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -213,8 +213,8 @@ export interface FileRoutesByFullPath {
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
-  '/floors/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -244,8 +244,8 @@ export interface FileRoutesByTo {
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin': typeof AdminIndexRoute
-  '/floors/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -276,8 +276,8 @@ export interface FileRoutesById {
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/units_/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
-  '/floors_/$floorId/units': typeof FloorsFloorIdUnitsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -309,8 +309,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/admin/admins'
     | '/admin/login'
+    | '/units/$floorId'
     | '/admin/'
-    | '/floors/$floorId/units'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -340,8 +340,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/admin/admins'
     | '/admin/login'
+    | '/units/$floorId'
     | '/admin'
-    | '/floors/$floorId/units'
   id:
     | '__root__'
     | '/'
@@ -371,8 +371,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/admin/admins'
     | '/admin/login'
+    | '/units_/$floorId'
     | '/admin/'
-    | '/floors_/$floorId/units'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -403,8 +403,8 @@ export interface RootRouteChildren {
   VisitorsRoute: typeof VisitorsRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  UnitsFloorIdRoute: typeof UnitsFloorIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  FloorsFloorIdUnitsRoute: typeof FloorsFloorIdUnitsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -605,11 +605,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/floors_/$floorId/units': {
-      id: '/floors_/$floorId/units'
-      path: '/floors/$floorId/units'
-      fullPath: '/floors/$floorId/units'
-      preLoaderRoute: typeof FloorsFloorIdUnitsRouteImport
+    '/units_/$floorId': {
+      id: '/units_/$floorId'
+      path: '/units/$floorId'
+      fullPath: '/units/$floorId'
+      preLoaderRoute: typeof UnitsFloorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -643,8 +643,8 @@ const rootRouteChildren: RootRouteChildren = {
   VisitorsRoute: VisitorsRoute,
   AdminAdminsRoute: AdminAdminsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  UnitsFloorIdRoute: UnitsFloorIdRoute,
   AdminIndexRoute: AdminIndexRoute,
-  FloorsFloorIdUnitsRoute: FloorsFloorIdUnitsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

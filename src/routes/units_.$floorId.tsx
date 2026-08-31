@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { floorApi, unitApi, type ApiFloor, type ApiUnit, type UnitStatus, type UnitType } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/floors_/$floorId/units")({
+export const Route = createFileRoute("/units_/$floorId")({
   component: FloorUnitsPage,
 });
 
@@ -217,21 +217,21 @@ function FloorUnitsPage() {
         }
       />
 
-   {!loading && !capIsSet ? (
-  <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-    <span>Set how many units this floor can hold before anyone can add units.</span>
-    <Input
-      type="number"
-      min={1}
-      value={capDraft}
-      onChange={(e) => setCapDraft(e.target.value)}
-      placeholder="e.g. 6"
-      className="h-8 w-24"
-    />
-    <Button size="sm" onClick={() => void saveCap()} disabled={savingCap}>
-      Save cap
-    </Button>
-  </div>
+  {!loading && !capIsSet ? (
+<div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+  <span className="text-muted-foreground">Set how many units this floor can hold before anyone can add units.</span>
+  <Input
+    type="number"
+    min={1}
+    value={capDraft}
+    onChange={(e) => setCapDraft(e.target.value)}
+    placeholder="e.g. 6"
+    className="h-8 w-24 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+  />
+  <Button size="sm" onClick={() => void saveCap()} disabled={savingCap}>
+    Save cap
+  </Button>
+</div>
 ) : null}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -260,9 +260,17 @@ function FloorUnitsPage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
-                    {capIsSet ? 'No units yet. Click "Add unit" to create one.' : "No units yet."}
-                  </TableCell>
+                  <TableCell colSpan={10} className="py-16 text-center">
+  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+    <LayoutGrid className="size-8 opacity-40" />
+    <p className="text-sm">{capIsSet ? "No units yet on this floor." : "Set a unit cap above to get started."}</p>
+    {capIsSet ? (
+      <Button size="sm" variant="secondary" onClick={addRow} className="mt-1">
+        <Plus className="size-4" /> Add first unit
+      </Button>
+    ) : null}
+  </div>
+</TableCell>
                 </TableRow>
               ) : (
                 rows.map((row, index) => (
@@ -380,21 +388,27 @@ function FloorUnitsPage() {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => void saveRow(index)}
-                          disabled={savingIndex === index}
-                          aria-label="Save"
-                        >
-                          <Save className="size-4 text-emerald-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => void removeRow(index)} aria-label="Delete">
-                          {row.id ? <Trash2 className="size-4 text-destructive" /> : <X className="size-4" />}
-                        </Button>
-                      </div>
-                    </TableCell>
+  <div className="flex justify-end gap-1">
+    {!row.id ? (
+    <span className="mr-1 rounded border border-primary/30 bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+  New
+</span>
+    ) : null}
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => void saveRow(index)}
+      disabled={savingIndex === index}
+      aria-label="Save"
+      title="Save"
+    >
+      <Save className="size-4 text-emerald-600" />
+    </Button>
+    <Button variant="ghost" size="icon" onClick={() => void removeRow(index)} aria-label="Delete" title="Delete">
+      {row.id ? <Trash2 className="size-4 text-destructive" /> : <X className="size-4" />}
+    </Button>
+  </div>
+</TableCell>
                   </TableRow>
                 ))
               )}

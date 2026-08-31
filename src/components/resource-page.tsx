@@ -364,8 +364,7 @@ export function ResourcePage({
   {resource === "floors" ? (
     <div className="flex items-center justify-end gap-2">
       <Button asChild size="sm" variant="default">
-        <Link to="/floors/$floorId/units" params={{ floorId: row.id }}>
-          Manage units
+<Link to="/units/$floorId" params={{ floorId: row.id }}>          Manage units
         </Link>
       </Button>
       {canEditRow(row) ? (
@@ -393,8 +392,7 @@ export function ResourcePage({
       ) : null}
     </div>
   ) : (
-    <span className="text-xs text-muted-foreground">View only</span>
-  )}
+<Badge variant="outline" className="text-[10px] font-normal">View only</Badge>  )}
 </TableCell>
                   </TableRow>
                 ))
