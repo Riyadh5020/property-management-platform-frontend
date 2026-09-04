@@ -19,8 +19,7 @@ export const Route = createFileRoute("/dashboard")({
       { title: "Dashboard — EstateOps Property Management" },
       {
         name: "description",
-        content:
-          "Portfolio overview: occupancy, rent collection, open maintenance and overdue invoices.",
+        content: "Portfolio overview: occupancy, rent collection, open maintenance and overdue invoices.",
       },
       { property: "og:title", content: "Dashboard — EstateOps" },
       { property: "og:description", content: "Your property portfolio at a glance." },
@@ -53,14 +52,14 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const buildings = useCollection("buildings");
+  const properties = useCollection("properties");
   const units = useCollection("units");
   const tenants = useCollection("tenants");
   const invoices = useCollection("invoices");
   const maintenance = useCollection("maintenance");
   const leases = useCollection("leases");
 
-  const occupied = units.rows.filter((u) => u["status"] === "Occupied").length;
+  const occupied = units.rows.filter((u) => u["status"] === "occupied").length;
   const occupancy = units.rows.length ? Math.round((occupied / units.rows.length) * 100) : 0;
   const billed = invoices.rows.reduce(
     (sum, i) => sum + Number(i["rent"] ?? 0) + Number(i["utilities"] ?? 0) + Number(i["penalty"] ?? 0),
@@ -83,7 +82,7 @@ function DashboardPage() {
     <AppShell>
       <PageHeader
         title="Portfolio overview"
-        description="Live snapshot across every building you manage."
+        description="Live snapshot across every property you manage."
         actions={
           <Button asChild size="sm" variant="secondary">
             <Link to="/reports">View reports</Link>
@@ -93,8 +92,8 @@ function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Buildings"
-          value={String(buildings.rows.length)}
+          label="Properties"
+          value={String(properties.rows.length)}
           hint={`${units.rows.length} units registered`}
           icon={Building2}
         />
@@ -138,8 +137,7 @@ function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium">{String(invoice["tenant"])}</p>
                     <p className="text-xs text-muted-foreground">
-                      {String(invoice["number"])} · unit {String(invoice["unit"])} · due{" "}
-                      {String(invoice["dueDate"])}
+                      {String(invoice["number"])} · unit {String(invoice["unit"])} · due {String(invoice["dueDate"])}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -173,9 +171,7 @@ function DashboardPage() {
                 </p>
               </div>
             ))}
-            {openWork.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open maintenance.</p>
-            ) : null}
+            {openWork.length === 0 ? <p className="text-sm text-muted-foreground">No open maintenance.</p> : null}
           </div>
         </div>
       </div>
@@ -195,9 +191,7 @@ function DashboardPage() {
                 <p className="text-xs text-muted-foreground">
                   Unit {String(lease["unit"])} · ends {String(lease["endDate"])}
                 </p>
-                <p className="mt-2 text-xs text-primary">
-                  +{String(lease["escalation"])}% escalation on renewal
-                </p>
+                <p className="mt-2 text-xs text-primary">+{String(lease["escalation"])}% escalation on renewal</p>
               </div>
             ))
           )}

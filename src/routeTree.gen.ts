@@ -18,11 +18,14 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EmergencyContactsRouteImport } from './routes/emergency-contacts'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as FlatStatusRouteImport } from './routes/flat-status'
+import { Route as FloorsRouteImport } from './routes/floors'
 import { Route as LeasesRouteImport } from './routes/leases'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
+import { Route as PropertiesRouteImport } from './routes/properties'
+import { Route as PropertyRequestsRouteImport } from './routes/property-requests'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
@@ -33,7 +36,10 @@ import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as VisitorsRouteImport } from './routes/visitors'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
+import { Route as AdminForgotPasswordRouteImport } from './routes/admin.forgot-password'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminResetPasswordRouteImport } from './routes/admin.reset-password'
+import { Route as UnitsFloorIdRouteImport } from './routes/units_.$floorId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -80,6 +86,11 @@ const FlatStatusRoute = FlatStatusRouteImport.update({
   path: '/flat-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FloorsRoute = FloorsRouteImport.update({
+  id: '/floors',
+  path: '/floors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeasesRoute = LeasesRouteImport.update({
   id: '/leases',
   path: '/leases',
@@ -103,6 +114,16 @@ const OwnersRoute = OwnersRouteImport.update({
 const ParkingRoute = ParkingRouteImport.update({
   id: '/parking',
   path: '/parking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertiesRoute = PropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertyRequestsRoute = PropertyRequestsRouteImport.update({
+  id: '/property-requests',
+  path: '/property-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -155,9 +176,24 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admin/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminForgotPasswordRoute = AdminForgotPasswordRouteImport.update({
+  id: '/admin/forgot-password',
+  path: '/admin/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
+  id: '/admin/reset-password',
+  path: '/admin/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnitsFloorIdRoute = UnitsFloorIdRouteImport.update({
+  id: '/units_/$floorId',
+  path: '/units/$floorId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -171,11 +207,14 @@ export interface FileRoutesByFullPath {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -185,7 +224,10 @@ export interface FileRoutesByFullPath {
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -198,11 +240,14 @@ export interface FileRoutesByTo {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -212,7 +257,10 @@ export interface FileRoutesByTo {
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -226,11 +274,14 @@ export interface FileRoutesById {
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
   '/flat-status': typeof FlatStatusRoute
+  '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
   '/maintenance': typeof MaintenanceRoute
   '/notices': typeof NoticesRoute
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
+  '/properties': typeof PropertiesRoute
+  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
@@ -240,7 +291,10 @@ export interface FileRoutesById {
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/units_/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -255,11 +309,14 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -269,7 +326,10 @@ export interface FileRouteTypes {
     | '/utilities'
     | '/visitors'
     | '/admin/admins'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/reset-password'
+    | '/units/$floorId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -282,11 +342,14 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -296,7 +359,10 @@ export interface FileRouteTypes {
     | '/utilities'
     | '/visitors'
     | '/admin/admins'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/reset-password'
+    | '/units/$floorId'
     | '/admin'
   id:
     | '__root__'
@@ -309,11 +375,14 @@ export interface FileRouteTypes {
     | '/emergency-contacts'
     | '/expenses'
     | '/flat-status'
+    | '/floors'
     | '/leases'
     | '/maintenance'
     | '/notices'
     | '/owners'
     | '/parking'
+    | '/properties'
+    | '/property-requests'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -323,7 +392,10 @@ export interface FileRouteTypes {
     | '/utilities'
     | '/visitors'
     | '/admin/admins'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/reset-password'
+    | '/units_/$floorId'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -337,11 +409,14 @@ export interface RootRouteChildren {
   EmergencyContactsRoute: typeof EmergencyContactsRoute
   ExpensesRoute: typeof ExpensesRoute
   FlatStatusRoute: typeof FlatStatusRoute
+  FloorsRoute: typeof FloorsRoute
   LeasesRoute: typeof LeasesRoute
   MaintenanceRoute: typeof MaintenanceRoute
   NoticesRoute: typeof NoticesRoute
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
+  PropertiesRoute: typeof PropertiesRoute
+  PropertyRequestsRoute: typeof PropertyRequestsRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
@@ -351,7 +426,10 @@ export interface RootRouteChildren {
   UtilitiesRoute: typeof UtilitiesRoute
   VisitorsRoute: typeof VisitorsRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
+  AdminForgotPasswordRoute: typeof AdminForgotPasswordRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminResetPasswordRoute: typeof AdminResetPasswordRoute
+  UnitsFloorIdRoute: typeof UnitsFloorIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -420,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlatStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/floors': {
+      id: '/floors'
+      path: '/floors'
+      fullPath: '/floors'
+      preLoaderRoute: typeof FloorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leases': {
       id: '/leases'
       path: '/leases'
@@ -453,6 +538,20 @@ declare module '@tanstack/react-router' {
       path: '/parking'
       fullPath: '/parking'
       preLoaderRoute: typeof ParkingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/properties': {
+      id: '/properties'
+      path: '/properties'
+      fullPath: '/properties'
+      preLoaderRoute: typeof PropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/property-requests': {
+      id: '/property-requests'
+      path: '/property-requests'
+      fullPath: '/property-requests'
+      preLoaderRoute: typeof PropertyRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -525,11 +624,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/forgot-password': {
+      id: '/admin/forgot-password'
+      path: '/admin/forgot-password'
+      fullPath: '/admin/forgot-password'
+      preLoaderRoute: typeof AdminForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reset-password': {
+      id: '/admin/reset-password'
+      path: '/admin/reset-password'
+      fullPath: '/admin/reset-password'
+      preLoaderRoute: typeof AdminResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/units_/$floorId': {
+      id: '/units_/$floorId'
+      path: '/units/$floorId'
+      fullPath: '/units/$floorId'
+      preLoaderRoute: typeof UnitsFloorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -545,11 +665,14 @@ const rootRouteChildren: RootRouteChildren = {
   EmergencyContactsRoute: EmergencyContactsRoute,
   ExpensesRoute: ExpensesRoute,
   FlatStatusRoute: FlatStatusRoute,
+  FloorsRoute: FloorsRoute,
   LeasesRoute: LeasesRoute,
   MaintenanceRoute: MaintenanceRoute,
   NoticesRoute: NoticesRoute,
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
+  PropertiesRoute: PropertiesRoute,
+  PropertyRequestsRoute: PropertyRequestsRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
@@ -559,7 +682,10 @@ const rootRouteChildren: RootRouteChildren = {
   UtilitiesRoute: UtilitiesRoute,
   VisitorsRoute: VisitorsRoute,
   AdminAdminsRoute: AdminAdminsRoute,
+  AdminForgotPasswordRoute: AdminForgotPasswordRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminResetPasswordRoute: AdminResetPasswordRoute,
+  UnitsFloorIdRoute: UnitsFloorIdRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
