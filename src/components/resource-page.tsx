@@ -31,7 +31,7 @@ import { useAuth } from "@/lib/auth";
 import { resources, type FieldDef, type Row } from "@/lib/mock-data";
 import { formatMoney, useCollection } from "@/lib/store";
 import { Link } from "@tanstack/react-router";
-import { Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import { LayoutGrid, List, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -92,6 +92,7 @@ export function ResourcePage({
 
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
   const backendFilters = def.apiBacked
     ? {
@@ -260,8 +261,7 @@ export function ResourcePage({
         }
       />
 
-      <div className="mb-4 flex items-center gap-2">
-        <div className="relative w-full max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">        <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
@@ -300,11 +300,35 @@ export function ResourcePage({
             </SelectContent>
           </Select>
         ) : null}
-        <p className="ml-auto text-sm text-muted-foreground">
-          {apiBacked
-            ? `${total === 0 ? 0 : page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, total)} of ${total}`
-            : `${filtered.length} of ${rows.length}`}
-        </p>
+      <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center rounded-md border border-border p-0.5">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="icon"
+              className="size-7"
+              onClick={() => setViewMode("table")}
+              aria-label="Table view"
+              title="Table view"
+            >
+              <List className="size-4" />
+            </Button>
+            <Button
+              variant={viewMode === "card" ? "secondary" : "ghost"}
+              size="icon"
+              className="size-7"
+              onClick={() => setViewMode("card")}
+              aria-label="Card view"
+              title="Card view"
+            >
+              <LayoutGrid className="size-4" />
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {apiBacked
+              ? `${total === 0 ? 0 : page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, total)} of ${total}`
+              : `${filtered.length} of ${rows.length}`}
+          </p>
+        </div>
       </div>
 
       {apiBacked && total > PAGE_SIZE ? (
@@ -326,6 +350,7 @@ export function ResourcePage({
         </div>
       ) : null}
 
+      {viewMode === "table" ? (
       <div className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity ${isFetching ? "opacity-60" : ""}`}>
         <div className="overflow-x-auto">
           <Table>
@@ -336,8 +361,7 @@ export function ResourcePage({
                     {f.label}
                   </TableHead>
                 ))}
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              </TableRow>
+                <TableHead className="sticky right-0 w-24 bg-card text-right">Actions</TableHead>              </TableRow>
             </TableHeader>
             <TableBody>
               {!loaded ? (
@@ -347,9 +371,16 @@ export function ResourcePage({
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length + 1} className="py-10 text-center text-muted-foreground">
-                    Nothing here yet.
+               <TableRow>
+                  <TableCell colSpan={columns.length + 1} className="py-14 text-center">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <p className="text-sm">Nothing here yet.</p>
+                      {canCreate ? (
+                        <Button size="sm" variant="secondary" onClick={openCreate} className="mt-1">
+                          <Plus className="size-4" /> New {def.singular.toLowerCase()}
+                        </Button>
+                      ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -360,7 +391,7 @@ export function ResourcePage({
                         {renderCell(f, row[f.key], refLabel)}
                       </TableCell>
                     ))}
-                  <TableCell className="text-right">
+                  <TableCell className="sticky right-0 bg-card text-right">
   {resource === "floors" ? (
     <div className="flex items-center justify-end gap-2">
       <Button asChild size="sm" variant="default">
@@ -399,8 +430,84 @@ export function ResourcePage({
               )}
             </TableBody>
           </Table>
-        </div>
+           </div>
       </div>
+      ) : (
+        <div className={`transition-opacity ${isFetching ? "opacity-60" : ""}`}>
+          {!loaded ? (
+            <div className="rounded-xl border border-border bg-card py-16 text-center text-muted-foreground">
+              Loading…
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card py-16 text-center text-muted-foreground">
+              <p className="text-sm">Nothing here yet.</p>
+              {canCreate ? (
+                <Button size="sm" variant="secondary" onClick={openCreate} className="mt-1">
+                  <Plus className="size-4" /> New {def.singular.toLowerCase()}
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((row) => {
+                const titleField = columns[0];
+                const titleValue = titleField ? String(row[titleField.key] ?? "Untitled") : "Untitled";
+                const restColumns = columns.slice(1);
+
+                return (
+                  <div key={row.id} className="rounded-xl border border-border bg-card p-4">
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <p className="font-medium leading-tight">{titleValue}</p>
+                      {statusField && row[statusField.key] ? (
+                        <Badge variant={statusVariant(String(row[statusField.key]))} className="shrink-0">
+                          {String(row[statusField.key])}
+                        </Badge>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {restColumns
+                        .filter((f) => f.key !== statusField?.key)
+                        .map((f) => (
+                          <div key={f.key} className="flex items-center justify-between gap-2 text-sm">
+                            <span className="text-muted-foreground">{f.label}</span>
+                            <span className="text-right">{renderCell(f, row[f.key], refLabel)}</span>
+                          </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3">
+                      {resource === "floors" ? (
+                        <Button asChild size="sm" variant="default">
+                          <Link to="/units/$floorId" params={{ floorId: row.id }}>
+                            Manage units
+                          </Link>
+                        </Button>
+                      ) : null}
+                      {canEditRow(row) ? (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(row)}>
+                            <Pencil className="size-4" /> Edit
+                          </Button>
+                          {canDeleteRow(row) ? (
+                            <Button variant="ghost" size="sm" onClick={() => requestDelete(row)}>
+                              <Trash2 className="size-4 text-destructive" /> Delete
+                            </Button>
+                          ) : null}
+                        </>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] font-normal">
+                          View only
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">

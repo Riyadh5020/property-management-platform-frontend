@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, LayoutGrid, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, LayoutGrid, List, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -63,6 +65,13 @@ function toDraft(u: ApiUnit): DraftUnit {
 
 const notApplicable = (type: UnitType) => type === "parking" || type === "common";
 
+const statusVariant = (status: UnitStatus): "default" | "secondary" | "destructive" | "outline" => {
+  if (status === "vacant") return "default";
+  if (status === "occupied") return "secondary";
+  if (status === "maintenance") return "destructive";
+  return "outline";
+};
+
 function FloorUnitsPage() {
   const { floorId } = Route.useParams();
   const { admin } = useAuth();
@@ -74,6 +83,7 @@ function FloorUnitsPage() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [capDraft, setCapDraft] = useState("");
   const [savingCap, setSavingCap] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "card">("card");
 
   const load = async () => {
     setLoading(true);
@@ -194,6 +204,24 @@ function FloorUnitsPage() {
     }
   };
 
+  const NewBadge = () => (
+    <span className="rounded border border-primary/30 bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+      New
+    </span>
+  );
+
+  const EmptyState = () => (
+    <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
+      <LayoutGrid className="size-8 opacity-40" />
+      <p className="text-sm">{capIsSet ? "No units yet on this floor." : "Set a unit cap above to get started."}</p>
+      {capIsSet ? (
+        <Button size="sm" variant="secondary" onClick={addRow} className="mt-1">
+          <Plus className="size-4" /> Add first unit
+        </Button>
+      ) : null}
+    </div>
+  );
+
   return (
     <AppShell>
       <div className="mb-2">
@@ -211,69 +239,228 @@ function FloorUnitsPage() {
             : "This floor doesn't have a unit limit yet."
         }
         actions={
-          <Button size="sm" onClick={addRow} disabled={!canAdd}>
-            <Plus className="size-4" /> Add unit
-          </Button>
+          <>
+            <div className="flex items-center rounded-md border border-border p-0.5">
+              <Button
+                variant={viewMode === "card" ? "secondary" : "ghost"}
+                size="icon"
+                className="size-7"
+                onClick={() => setViewMode("card")}
+                aria-label="Card view"
+                title="Card view"
+              >
+                <LayoutGrid className="size-4" />
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+                size="icon"
+                className="size-7"
+                onClick={() => setViewMode("table")}
+                aria-label="Table view"
+                title="Table view"
+              >
+                <List className="size-4" />
+              </Button>
+            </div>
+            <Button size="sm" onClick={addRow} disabled={!canAdd}>
+              <Plus className="size-4" /> Add unit
+            </Button>
+          </>
         }
       />
 
-  {!loading && !capIsSet ? (
-<div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
-  <span className="text-muted-foreground">Set how many units this floor can hold before anyone can add units.</span>
-  <Input
-    type="number"
-    min={1}
-    value={capDraft}
-    onChange={(e) => setCapDraft(e.target.value)}
-    placeholder="e.g. 6"
-    className="h-8 w-24 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-  />
-  <Button size="sm" onClick={() => void saveCap()} disabled={savingCap}>
-    Save cap
-  </Button>
-</div>
-) : null}
+      {!loading && !capIsSet ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+          <span className="text-muted-foreground">Set how many units this floor can hold before anyone can add units.</span>
+          <Input
+            type="number"
+            min={1}
+            value={capDraft}
+            onChange={(e) => setCapDraft(e.target.value)}
+            placeholder="e.g. 6"
+            className="h-8 w-24 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <Button size="sm" onClick={() => void saveCap()} disabled={savingCap}>
+            Save cap
+          </Button>
+        </div>
+      ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Unit code</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Area (sqft)</TableHead>
-                <TableHead>Bedrooms</TableHead>
-                <TableHead>Bathrooms</TableHead>
-                <TableHead>Kitchen</TableHead>
-                <TableHead>Balcony</TableHead>
-                <TableHead>Rent</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-20 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+      {loading ? (
+        <div className="rounded-xl border border-border bg-card py-16 text-center text-muted-foreground">
+          Loading…
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card">
+          <EmptyState />
+        </div>
+      ) : viewMode === "card" ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((row, index) => (
+            <div key={row.id ?? `new-${index}`} className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={row.unitCode}
+                    onChange={(e) => updateRow(index, { unitCode: e.target.value })}
+                    placeholder="Unit code, e.g. A1"
+                    className="h-8 w-28 font-medium"
+                  />
+                  {!row.id ? <NewBadge /> : null}
+                </div>
+                <Badge variant={statusVariant(row.status)} className="capitalize">
+                  {row.status}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Type</Label>
+                  <Select value={row.unitType} onValueChange={(v) => updateRow(index, { unitType: v as UnitType })}>
+                    <SelectTrigger className="h-8 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["apartment", "office", "shop", "parking", "common"].map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Select value={row.status} onValueChange={(v) => updateRow(index, { status: v as UnitStatus })}>
+                    <SelectTrigger className="h-8 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["vacant", "occupied", "reserved", "maintenance"].map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Area (sqft)</Label>
+                  <Input
+                    type="number"
+                    value={row.areaSize}
+                    onChange={(e) => updateRow(index, { areaSize: e.target.value })}
+                    className="h-8"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Rent</Label>
+                  <Input
+                    type="number"
+                    value={row.rent}
+                    onChange={(e) => updateRow(index, { rent: e.target.value })}
+                    className="h-8"
+                  />
+                </div>
+
+                {!notApplicable(row.unitType) ? (
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Bedrooms</Label>
+                      <Input
+                        type="number"
+                        value={row.bedrooms}
+                        onChange={(e) => updateRow(index, { bedrooms: e.target.value })}
+                        className="h-8"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Bathrooms</Label>
+                      <Input
+                        type="number"
+                        value={row.bathrooms}
+                        onChange={(e) => updateRow(index, { bathrooms: e.target.value })}
+                        className="h-8"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Kitchen</Label>
+                      <Select
+                        value={row.hasKitchen ? "true" : "false"}
+                        onValueChange={(v) => updateRow(index, { hasKitchen: v === "true" })}
+                      >
+                        <SelectTrigger className="h-8 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="true">Yes</SelectItem>
+                          <SelectItem value="false">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Balcony</Label>
+                      <Select
+                        value={row.hasBalcony ? "true" : "false"}
+                        onValueChange={(v) => updateRow(index, { hasBalcony: v === "true" })}
+                      >
+                        <SelectTrigger className="h-8 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="true">Yes</SelectItem>
+                          <SelectItem value="false">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void saveRow(index)}
+                  disabled={savingIndex === index}
+                >
+                  <Save className="size-4 text-emerald-600" />
+                  Save
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => void removeRow(index)}>
+                  {row.id ? <Trash2 className="size-4 text-destructive" /> : <X className="size-4" />}
+                  {row.id ? "Delete" : "Cancel"}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
-                    Loading…
-                  </TableCell>
+                  <TableHead>Unit code</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Area (sqft)</TableHead>
+                  <TableHead>Bedrooms</TableHead>
+                  <TableHead>Bathrooms</TableHead>
+                  <TableHead>Kitchen</TableHead>
+                  <TableHead>Balcony</TableHead>
+                  <TableHead>Rent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="sticky right-0 w-20 bg-card text-right">Actions</TableHead>
                 </TableRow>
-              ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="py-16 text-center">
-  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-    <LayoutGrid className="size-8 opacity-40" />
-    <p className="text-sm">{capIsSet ? "No units yet on this floor." : "Set a unit cap above to get started."}</p>
-    {capIsSet ? (
-      <Button size="sm" variant="secondary" onClick={addRow} className="mt-1">
-        <Plus className="size-4" /> Add first unit
-      </Button>
-    ) : null}
-  </div>
-</TableCell>
-                </TableRow>
-              ) : (
-                rows.map((row, index) => (
+              </TableHeader>
+              <TableBody>
+                {rows.map((row, index) => (
                   <TableRow key={row.id ?? `new-${index}`}>
                     <TableCell>
                       <Input
@@ -387,35 +574,31 @@ function FloorUnitsPage() {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-right">
-  <div className="flex justify-end gap-1">
-    {!row.id ? (
-    <span className="mr-1 rounded border border-primary/30 bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-  New
-</span>
-    ) : null}
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => void saveRow(index)}
-      disabled={savingIndex === index}
-      aria-label="Save"
-      title="Save"
-    >
-      <Save className="size-4 text-emerald-600" />
-    </Button>
-    <Button variant="ghost" size="icon" onClick={() => void removeRow(index)} aria-label="Delete" title="Delete">
-      {row.id ? <Trash2 className="size-4 text-destructive" /> : <X className="size-4" />}
-    </Button>
-  </div>
-</TableCell>
+                    <TableCell className="sticky right-0 bg-card text-right">
+                      <div className="flex justify-end gap-1">
+                        {!row.id ? <NewBadge /> : null}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => void saveRow(index)}
+                          disabled={savingIndex === index}
+                          aria-label="Save"
+                          title="Save"
+                        >
+                          <Save className="size-4 text-emerald-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => void removeRow(index)} aria-label="Delete" title="Delete">
+                          {row.id ? <Trash2 className="size-4 text-destructive" /> : <X className="size-4" />}
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
     </AppShell>
   );
 }

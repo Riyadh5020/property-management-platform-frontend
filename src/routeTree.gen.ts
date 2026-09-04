@@ -36,7 +36,9 @@ import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as VisitorsRouteImport } from './routes/visitors'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
+import { Route as AdminForgotPasswordRouteImport } from './routes/admin.forgot-password'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminResetPasswordRouteImport } from './routes/admin.reset-password'
 import { Route as UnitsFloorIdRouteImport } from './routes/units_.$floorId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -174,9 +176,19 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admin/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminForgotPasswordRoute = AdminForgotPasswordRouteImport.update({
+  id: '/admin/forgot-password',
+  path: '/admin/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
+  id: '/admin/reset-password',
+  path: '/admin/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnitsFloorIdRoute = UnitsFloorIdRouteImport.update({
@@ -212,7 +224,9 @@ export interface FileRoutesByFullPath {
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -243,7 +257,9 @@ export interface FileRoutesByTo {
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -275,7 +291,9 @@ export interface FileRoutesById {
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/units_/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -308,7 +326,9 @@ export interface FileRouteTypes {
     | '/utilities'
     | '/visitors'
     | '/admin/admins'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/reset-password'
     | '/units/$floorId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -339,7 +359,9 @@ export interface FileRouteTypes {
     | '/utilities'
     | '/visitors'
     | '/admin/admins'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/reset-password'
     | '/units/$floorId'
     | '/admin'
   id:
@@ -370,7 +392,9 @@ export interface FileRouteTypes {
     | '/utilities'
     | '/visitors'
     | '/admin/admins'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/reset-password'
     | '/units_/$floorId'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -402,7 +426,9 @@ export interface RootRouteChildren {
   UtilitiesRoute: typeof UtilitiesRoute
   VisitorsRoute: typeof VisitorsRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
+  AdminForgotPasswordRoute: typeof AdminForgotPasswordRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminResetPasswordRoute: typeof AdminResetPasswordRoute
   UnitsFloorIdRoute: typeof UnitsFloorIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -598,11 +624,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/forgot-password': {
+      id: '/admin/forgot-password'
+      path: '/admin/forgot-password'
+      fullPath: '/admin/forgot-password'
+      preLoaderRoute: typeof AdminForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reset-password': {
+      id: '/admin/reset-password'
+      path: '/admin/reset-password'
+      fullPath: '/admin/reset-password'
+      preLoaderRoute: typeof AdminResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/units_/$floorId': {
@@ -642,7 +682,9 @@ const rootRouteChildren: RootRouteChildren = {
   UtilitiesRoute: UtilitiesRoute,
   VisitorsRoute: VisitorsRoute,
   AdminAdminsRoute: AdminAdminsRoute,
+  AdminForgotPasswordRoute: AdminForgotPasswordRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminResetPasswordRoute: AdminResetPasswordRoute,
   UnitsFloorIdRoute: UnitsFloorIdRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
