@@ -73,7 +73,7 @@ function AdminLoginPage() {
             placeholder="superadmin@example.com"
           />
         </div>
-        <div className="space-y-2">
+ <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
@@ -82,6 +82,15 @@ function AdminLoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+         <div className="flex justify-end">
+            <Link
+              to="/admin/forgot-password"
+              search={{ email: email || undefined }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}

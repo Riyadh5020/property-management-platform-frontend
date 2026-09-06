@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { adminApi, tokenStore, type ApiAdmin } from "./api";
 
@@ -37,8 +37,12 @@ function writeProfile(key: string, admin: ApiAdmin | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Session>(null);
   const [ready, setReady] = useState(false);
+  const restoreRanRef = useRef(false);
 
   useEffect(() => {
+    if (restoreRanRef.current) return;
+    restoreRanRef.current = true;
+
     async function restoreSession() {
       const storedAdminRefreshToken =
         typeof window !== "undefined" ? window.localStorage.getItem(ADMIN_REFRESH_KEY) : null;
@@ -67,7 +71,10 @@ tokenStore.setAdmin(result.accessToken, result.refreshToken);
     setAdmin({ token: result.accessToken, admin: result.admin ?? null });
   }, []);
 
-  const logoutAdmin = useCallback(() => {
+   const logoutAdmin = useCallback(() => {
+    void adminApi.logout().catch(() => {
+      // best-effort — still clear the local session even if the network call fails
+    });
     tokenStore.setAdmin(null, null);
     writeProfile(ADMIN_PROFILE_KEY, null);
     setAdmin(null);

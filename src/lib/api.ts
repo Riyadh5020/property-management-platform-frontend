@@ -202,9 +202,15 @@ export function toList<T>(value: unknown): T[] {
 export const adminApi = {
   login: (body: { email: string; password: string }) =>
     apiRequest<AuthResult>("/admins/login", { method: "POST", body }),
-  refreshToken: (body: { refreshToken: string }) =>
+   refreshToken: (body: { refreshToken: string }) =>
     apiRequest<{ accessToken: string; refreshToken: string }>("/admins/refresh-token", { method: "POST", body }),
+ logout: () => apiRequest<null>("/admins/logout", { method: "POST", auth: "admin" }),
+  forgotPassword: (body: { email: string }) =>
+    apiRequest<null>("/admins/forgot-password", { method: "POST", body }),
+  resetPassword: (body: { email: string; code: string; newPassword: string }) =>
+    apiRequest<null>("/admins/reset-password", { method: "POST", body }),
   listAdmins: () => apiRequest<unknown>("/admins", { auth: "admin" }).then(toList<ApiAdmin>),
+
   createAdmin: (body: {
     firstName: string;
     lastName: string;
