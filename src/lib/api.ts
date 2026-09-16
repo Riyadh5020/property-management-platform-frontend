@@ -43,6 +43,41 @@ export class ApiError extends Error {
   }
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  role: "Role",
+  status: "Status",
+  state: "State",
+  email: "Email",
+  password: "Password",
+  firstName: "First name",
+  lastName: "Last name",
+  phoneNumber: "Phone number",
+  price: "Price",
+  address: "Address",
+  city: "City",
+  country: "Country",
+  postalCode: "Postal code",
+  name: "Name",
+};
+
+function humanizeField(path: string): string {
+  const key = path.replace(/^body\./, "").split(".").pop() ?? path;
+  return FIELD_LABELS[key] ?? key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+}
+
+function humanizeIssue(path: string, msg: string): string {
+  const field = humanizeField(path);
+  if (/invalid enum value/i.test(msg)) return `${field} is not a valid option — please choose one from the list.`;
+  if (/at least 1 character/i.test(msg)) return `${field} is required.`;
+  const minMatch = msg.match(/at least (\d+) character/i);
+  if (minMatch) return `${field} must be at least ${minMatch[1]} characters.`;
+  if (/^invalid email$/i.test(msg.trim())) return "Please enter a valid email address.";
+  if (/invalid uuid|invalid url/i.test(msg)) return `${field} looks invalid.`;
+  // Not a recognized raw Zod pattern — the backend already wrote this in
+  // plain English (e.g. "Email already exists"), so use it as-is.
+  return msg;
+}
+
 type Auth = "none" | "admin";
 
 export interface RequestOptions {
@@ -133,20 +168,36 @@ if (!response.ok) {
   const rawMessage = errBody?.["message"];
   const errors = errBody?.["errors"];
 
-  let message =
+  let technicalMessage =
     typeof rawMessage === "string" && rawMessage ? rawMessage : `Request failed with status ${response.status}`;
+  let message = technicalMessage;
 
   if (Array.isArray(errors) && errors.length > 0) {
-    const detail = errors
+    const parsed = errors
       .map((e) => {
-        const path = e && typeof e === "object" ? (e as Record<string, unknown>)["path"] : undefined;
-        const msg = e && typeof e === "object" ? (e as Record<string, unknown>)["message"] : undefined;
-        return path ? `${path}: ${msg}` : String(msg ?? "");
+        const path = e && typeof e === "object" ? String((e as Record<string, unknown>)["path"] ?? "") : "";
+        const msg = e && typeof e === "object" ? String((e as Record<string, unknown>)["message"] ?? "") : "";
+        return { path, msg };
       })
-      .filter(Boolean)
-      .join("; ");
-    if (detail) message = detail;
+      .filter((e) => e.msg);
+
+    if (parsed.length > 0) {
+      technicalMessage = parsed.map((e) => (e.path ? `${e.path}: ${e.msg}` : e.msg)).join("; ");
+      message = parsed.map((e) => humanizeIssue(e.path, e.msg)).join(" ");
+    }
+} else if (response.status === 401 && auth === "admin") {
+      message = "You're not signed in, or your session has expired. Please log in again.";
+  } else if (response.status === 403) {
+    message = "You don't have permission to do that.";
+  } else if (response.status === 404) {
+    message = "That item couldn't be found.";
+  } else if (response.status === 429) {
+    message = "Too many attempts. Please wait a moment and try again.";
+  } else if (response.status >= 500) {
+    message = "Something went wrong on our end. Please try again in a moment.";
   }
+
+  console.error("[api]", technicalMessage, payload);
   throw new ApiError(message, response.status, payload);
 }
 
