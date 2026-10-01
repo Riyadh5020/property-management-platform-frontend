@@ -58,6 +58,9 @@ const FIELD_LABELS: Record<string, string> = {
   country: "Country",
   postalCode: "Postal code",
   name: "Name",
+    planId: "Subscription plan",
+  billingCycle: "Billing cycle",
+  amount: "Amount",
 };
 
 function humanizeField(path: string): string {
@@ -180,7 +183,6 @@ if (!response.ok) {
         return { path, msg };
       })
       .filter((e) => e.msg);
-
     if (parsed.length > 0) {
       technicalMessage = parsed.map((e) => (e.path ? `${e.path}: ${e.msg}` : e.msg)).join("; ");
       message = parsed.map((e) => humanizeIssue(e.path, e.msg)).join(" ");
@@ -314,6 +316,10 @@ export interface ApiProperty {
   images?: string[] | null;
   status: PropertyStatus;
   ownerId: string;
+    planId?: string | null;
+  subscriptionStartsAt?: string | null;
+  subscriptionEndsAt?: string | null;
+  subscriptionStatus?: SubscriptionStatus | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -393,7 +399,13 @@ export const propertyApi = {
     apiRequest<ApiProperty>("/properties/create", { method: "POST", body, auth: "admin" }),
   update: (id: string, body: Partial<ApiProperty>) =>
     apiRequest<ApiProperty>(`/properties/${id}`, { method: "PUT", body, auth: "admin" }),
-  remove: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { method: "DELETE", auth: "admin" }),
+remove: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { method: "DELETE", auth: "admin" }),
+  setSubscription: (id: string, planId: string) =>
+    apiRequest<ApiProperty>(`/properties/${id}/subscription`, {
+      method: "PATCH",
+      body: { planId },
+      auth: "admin",
+    }),
 };
 
 export const floorApi = {
@@ -427,6 +439,8 @@ export type PropertyRequestStatus = "pending" | "approved" | "denied";
 export interface ApiPropertyRequest {
   id: string;
   ownerId: string;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
   note: string;
   status: PropertyRequestStatus;
   reviewedBy?: string | null;
@@ -457,4 +471,82 @@ export const propertyRequestApi = {
       method: "PATCH",
       auth: "admin",
     }),
+};
+export type FloorRequestStatus = "pending" | "approved" | "denied";
+
+export interface ApiFloorRequest {
+  id: string;
+  propertyId: string;
+  ownerId: string;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  requestedFloorCount: number;
+  note: string;
+  status: FloorRequestStatus;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  consumedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const floorRequestApi = {
+  list: (params: ListParams & { status?: string; ownerId?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/floor-requests${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiFloorRequest>(res),
+    ),
+
+  create: (body: { propertyId: string; requestedFloorCount: number; note: string }) =>
+    apiRequest<ApiFloorRequest>("/floor-requests/create", {
+      method: "POST",
+      body,
+      auth: "admin",
+    }),
+
+  approve: (id: string) =>
+    apiRequest<ApiFloorRequest>(`/floor-requests/${id}/approve`, {
+      method: "PATCH",
+      auth: "admin",
+    }),
+
+  deny: (id: string) =>
+    apiRequest<ApiFloorRequest>(`/floor-requests/${id}/deny`, {
+      method: "PATCH",
+      auth: "admin",
+    }),
+};
+
+
+
+/* ------------------------------------------------------------------ */
+/* Subscription plans                                                  */
+/* ------------------------------------------------------------------ */
+
+export type BillingCycle = "trial" | "monthly" | "quarterly" | "yearly";
+export type SubscriptionPlanStatus = "active" | "inactive";
+export type SubscriptionStatus = "trial" | "active" | "expired" | "cancelled";
+
+export interface ApiSubscriptionPlan {
+  id: string;
+  name: string;
+  billingCycle: BillingCycle;
+  amount: number | string; // pg returns NUMERIC as a string, e.g. "4900.00"
+  durationDays: number;
+  status: SubscriptionPlanStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const subscriptionPlanApi = {
+  list: (params: ListParams & { status?: string } = {}) =>
+    apiRequest<unknown>(`/subscription-plans${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiSubscriptionPlan>(res),
+    ),
+  get: (id: string) => apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, { auth: "admin" }),
+  create: (body: { name: string; billingCycle: BillingCycle; amount: number; status?: SubscriptionPlanStatus }) =>
+    apiRequest<ApiSubscriptionPlan>("/subscription-plans/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Partial<Pick<ApiSubscriptionPlan, "name" | "billingCycle" | "status">> & { amount?: number }) =>
+    apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) =>
+    apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, { method: "DELETE", auth: "admin" }),
 };

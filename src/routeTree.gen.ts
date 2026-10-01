@@ -25,8 +25,8 @@ import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as ParkingRouteImport } from './routes/parking'
 import { Route as PropertiesRouteImport } from './routes/properties'
-import { Route as PropertyRequestsRouteImport } from './routes/property-requests'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
@@ -121,14 +121,14 @@ const PropertiesRoute = PropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PropertyRequestsRoute = PropertyRequestsRouteImport.update({
-  id: '/property-requests',
-  path: '/property-requests',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestsRoute = RequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -214,8 +214,8 @@ export interface FileRoutesByFullPath {
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/properties': typeof PropertiesRoute
-  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
+  '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/subscriptions': typeof SubscriptionsRoute
@@ -247,8 +247,8 @@ export interface FileRoutesByTo {
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/properties': typeof PropertiesRoute
-  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
+  '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/subscriptions': typeof SubscriptionsRoute
@@ -281,8 +281,8 @@ export interface FileRoutesById {
   '/owners': typeof OwnersRoute
   '/parking': typeof ParkingRoute
   '/properties': typeof PropertiesRoute
-  '/property-requests': typeof PropertyRequestsRoute
   '/reports': typeof ReportsRoute
+  '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/subscriptions': typeof SubscriptionsRoute
@@ -316,8 +316,8 @@ export interface FileRouteTypes {
     | '/owners'
     | '/parking'
     | '/properties'
-    | '/property-requests'
     | '/reports'
+    | '/requests'
     | '/settings'
     | '/staff'
     | '/subscriptions'
@@ -349,8 +349,8 @@ export interface FileRouteTypes {
     | '/owners'
     | '/parking'
     | '/properties'
-    | '/property-requests'
     | '/reports'
+    | '/requests'
     | '/settings'
     | '/staff'
     | '/subscriptions'
@@ -382,8 +382,8 @@ export interface FileRouteTypes {
     | '/owners'
     | '/parking'
     | '/properties'
-    | '/property-requests'
     | '/reports'
+    | '/requests'
     | '/settings'
     | '/staff'
     | '/subscriptions'
@@ -416,8 +416,8 @@ export interface RootRouteChildren {
   OwnersRoute: typeof OwnersRoute
   ParkingRoute: typeof ParkingRoute
   PropertiesRoute: typeof PropertiesRoute
-  PropertyRequestsRoute: typeof PropertyRequestsRoute
   ReportsRoute: typeof ReportsRoute
+  RequestsRoute: typeof RequestsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
@@ -547,18 +547,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/property-requests': {
-      id: '/property-requests'
-      path: '/property-requests'
-      fullPath: '/property-requests'
-      preLoaderRoute: typeof PropertyRequestsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reports': {
       id: '/reports'
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/requests': {
+      id: '/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -672,8 +672,8 @@ const rootRouteChildren: RootRouteChildren = {
   OwnersRoute: OwnersRoute,
   ParkingRoute: ParkingRoute,
   PropertiesRoute: PropertiesRoute,
-  PropertyRequestsRoute: PropertyRequestsRoute,
   ReportsRoute: ReportsRoute,
+  RequestsRoute: RequestsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
   SubscriptionsRoute: SubscriptionsRoute,

@@ -27,17 +27,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { propertyApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { resources, type FieldDef, type Row } from "@/lib/mock-data";
 import { formatMoney, useCollection } from "@/lib/store";
 import { Link } from "@tanstack/react-router";
 import { LayoutGrid, List, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
 const POSITIVE = ["active", "paid", "signed", "occupied", "completed", "settled", "available", "on duty", "assigned", "checked out"];
-const WARN = ["pending", "reserved", "partially paid", "in progress", "notice served", "sent for signature", "billed", "off duty", "free", "inside"];
-const BAD = ["overdue", "unpaid", "under maintenance", "cancelled", "denied", "on hold", "blocked", "closed", "moved out", "on leave"];
+const WARN = ["pending", "reserved", "partially paid", "in progress", "notice served", "sent for signature", "billed", "off duty", "free", "inside", "trial"];
+const BAD = ["overdue", "unpaid", "under maintenance", "cancelled", "denied", "on hold", "blocked", "closed", "moved out", "on leave", "expired"];
 
 function statusVariant(value: string): "default" | "secondary" | "destructive" | "outline" {
   const v = value.toLowerCase();
@@ -47,13 +47,34 @@ function statusVariant(value: string): "default" | "secondary" | "destructive" |
   return "outline";
 }
 
+function daysLeft(endsAt: unknown): number | null {
+  if (!endsAt) return null;
+  const ms = new Date(String(endsAt)).getTime() - Date.now();
+  return Number.isNaN(ms) ? null : Math.ceil(ms / 86_400_000);
+}
+
+function SubscriptionDays({ endsAt }: { endsAt: unknown }) {
+  const d = daysLeft(endsAt);
+  if (d === null) return <Badge variant="outline">No subscription</Badge>;
+  if (d <= 0) return <Badge variant="destructive">Expired</Badge>;
+  const variant = d <= 7 ? "destructive" : d <= 30 ? "secondary" : "default";
+  return <Badge variant={variant}>{d} day{d === 1 ? "" : "s"} left</Badge>;
+}
+
+
+
+
+
 function renderCell(field: FieldDef, value: unknown, resolveRef?: (id: unknown) => string | null) {
+if (field.key === "subscriptionEndsAt") return <SubscriptionDays endsAt={value} />;
+
   if (value === undefined || value === null || value === "") {
     return <span className="text-muted-foreground">—</span>;
   }
   if (field.type === "boolean") {
     return <Badge variant={value ? "default" : "outline"}>{value ? "Yes" : "No"}</Badge>;
   }
+  if (field.type === "date") return String(value).slice(0, 10);
   if (field.type === "money") return formatMoney(value);
   if (field.type === "entity-select") return resolveRef?.(value) ?? String(value);
   if (field.badge) return <Badge variant={statusVariant(String(value))}>{String(value)}</Badge>;
@@ -67,7 +88,8 @@ function emptyValues(fields: FieldDef[]) {
   });
   return values;
 }
-
+const SECTION_ORDER = ["Basics", "Structure", "Location", "Ownership", "Notes"];
+const sectionRank = (f: FieldDef) => (f.section ? SECTION_ORDER.indexOf(f.section) : -1);
 export function ResourcePage({
   resource,
   prefillValues,
@@ -76,7 +98,8 @@ export function ResourcePage({
   resource: string;
   prefillValues?: Record<string, string> | null;
   onPrefillConsumed?: () => void;
-}) {  const def = resources[resource]!;
+}) {
+  const def = resources[resource]!;
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -122,11 +145,17 @@ export function ResourcePage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillValues]);
 
-  const { admin } = useAuth();  
+  const { admin } = useAuth();
   const role = admin?.admin?.role;
 
   const refField = def.fields.find((f) => f.type === "entity-select");
   const { rows: refRows } = useCollection(refField?.sourceResource ?? "__none__");
+
+  // Second entity-select (e.g. subscription plan on properties). It must be
+  // declared after the main reference field (owner) in mock-data.ts.
+  const planField = def.fields.find((f) => f.type === "entity-select" && f.key !== refField?.key);
+  const { rows: planRowsAll } = useCollection(planField?.sourceResource ?? "__none__");
+  const planRows = planRowsAll.filter((r) => String(r["status"]) !== "inactive");
 
   // "own row" detection:
   // - properties: compare ownerId directly against the signed-in admin.
@@ -151,7 +180,12 @@ export function ResourcePage({
   const editingAsRestrictedOwner = role === "owner" && editing !== null;
   const fieldLocked = (f: FieldDef) => editingAsRestrictedOwner && !f.ownerEditable;
 
+  // tableOnly fields are display-only; createOnly fields are hidden when editing.
+  const isFormField = (f: FieldDef) => !f.tableOnly && !(editing && f.createOnly);
+
   const [open, setOpen] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [newPlanId, setNewPlanId] = useState("");
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(def.fields));
   const [confirmDelete, setConfirmDelete] = useState<Row | null>(null);
   const columns = def.fields.filter((f) => f.inTable);
@@ -170,7 +204,8 @@ export function ResourcePage({
     return rows.filter((row) => def.fields.some((f) => String(row[f.key] ?? "").toLowerCase().includes(q)));
   }, [rows, query, def.fields, apiBacked]);
 
-  const openCreate = () => {
+    const openCreate = () => {
+    setShowAdvanced(false);
     setEditing(null);
     setValues(emptyValues(def.fields));
     setOpen(true);
@@ -181,14 +216,16 @@ export function ResourcePage({
     def.fields.forEach((f) => {
       next[f.key] = row[f.key] === undefined || row[f.key] === null ? "" : String(row[f.key]);
     });
+        setShowAdvanced(false);
+
     setEditing(row);
     setValues(next);
     setOpen(true);
   };
 
-   const submit = async () => {
+  const submit = async () => {
     const missing = def.fields.filter(
-      (f) => f.required && !fieldLocked(f) && !String(values[f.key] ?? "").trim(),
+      (f) => isFormField(f) && f.required && !fieldLocked(f) && !String(values[f.key] ?? "").trim(),
     );
     if (missing.length > 0) {
       toast.error(`Please fill: ${missing.map((f) => f.label).join(", ")}`);
@@ -199,13 +236,15 @@ export function ResourcePage({
       const payload: Record<string, unknown> = {};
 
       def.fields.forEach((f) => {
-        if (fieldLocked(f)) return;
+        if (!isFormField(f) || fieldLocked(f)) return;
         const raw = values[f.key] ?? "";
+        if ((f.type === "number" || f.type === "money") && raw === "" && !f.required) {
+          if (editing) payload[f.key] = null;
+          return;
+        }
         payload[f.key] =
           f.type === "number" || f.type === "money"
-            ? raw === ""
-              ? 0
-              : Number(raw)
+            ? Number(raw)
             : f.type === "boolean"
               ? raw === "true"
               : raw;
@@ -261,7 +300,8 @@ export function ResourcePage({
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">        <div className="relative w-full max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
@@ -300,7 +340,7 @@ export function ResourcePage({
             </SelectContent>
           </Select>
         ) : null}
-      <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-3">
           <div className="flex items-center rounded-md border border-border p-0.5">
             <Button
               variant={viewMode === "table" ? "secondary" : "ghost"}
@@ -349,89 +389,110 @@ export function ResourcePage({
           </Button>
         </div>
       ) : null}
-
+{resource === "properties" && role === "owner"
+  ? rows
+      .map((r) => ({ r, d: daysLeft(r["subscriptionEndsAt"]) }))
+      .filter(({ d }) => d !== null && d <= 30)
+      .map(({ r, d }) => (
+        <div
+          key={r.id}
+          className={`mb-3 rounded-lg border p-3 text-sm ${
+            (d as number) <= 7 ? "border-destructive/50 text-destructive" : "border-border"
+          }`}
+        >
+          Subscription for <strong>{String(r["title"])}</strong>{" "}
+          {(d as number) <= 0 ? "has expired." : `ends in ${d} day${d === 1 ? "" : "s"}.`}{" "}
+          Contact your administrator to renew.
+        </div>
+      ))
+  : null}
       {viewMode === "table" ? (
-      <div className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity ${isFetching ? "opacity-60" : ""}`}>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((f) => (
-                  <TableHead key={f.key} className="whitespace-nowrap">
-                    {f.label}
-                  </TableHead>
-                ))}
-                <TableHead className="sticky right-0 w-24 bg-card text-right">Actions</TableHead>              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {!loaded ? (
+        <div className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity ${isFetching ? "opacity-60" : ""}`}>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={columns.length + 1} className="py-10 text-center text-muted-foreground">
-                    Loading…
-                  </TableCell>
+                  {columns.map((f) => (
+                    <TableHead key={f.key} className="whitespace-nowrap">
+                      {f.label}
+                    </TableHead>
+                  ))}
+                  <TableHead className="sticky right-0 w-24 bg-card text-right">Actions</TableHead>
                 </TableRow>
-              ) : filtered.length === 0 ? (
-               <TableRow>
-                  <TableCell colSpan={columns.length + 1} className="py-14 text-center">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <p className="text-sm">Nothing here yet.</p>
-                      {canCreate ? (
-                        <Button size="sm" variant="secondary" onClick={openCreate} className="mt-1">
-                          <Plus className="size-4" /> New {def.singular.toLowerCase()}
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((row) => (
-                  <TableRow key={row.id}>
-                    {columns.map((f) => (
-                      <TableCell key={f.key} className="whitespace-nowrap">
-                        {renderCell(f, row[f.key], refLabel)}
-                      </TableCell>
-                    ))}
-                  <TableCell className="sticky right-0 bg-card text-right">
-  {resource === "floors" ? (
-    <div className="flex items-center justify-end gap-2">
-      <Button asChild size="sm" variant="default">
-<Link to="/units/$floorId" params={{ floorId: row.id }}>          Manage units
-        </Link>
-      </Button>
-      {canEditRow(row) ? (
-        <>
-          <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit floor">
-            <Pencil className="size-4" />
-          </Button>
-          {canDeleteRow(row) ? (
-            <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete floor">
-              <Trash2 className="size-4 text-destructive" />
-            </Button>
-          ) : null}
-        </>
-      ) : null}
-    </div>
-  ) : canEditRow(row) ? (
-    <div className="flex justify-end gap-1">
-      <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit">
-        <Pencil className="size-4" />
-      </Button>
-      {canDeleteRow(row) ? (
-        <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete">
-          <Trash2 className="size-4 text-destructive" />
-        </Button>
-      ) : null}
-    </div>
-  ) : (
-<Badge variant="outline" className="text-[10px] font-normal">View only</Badge>  )}
-</TableCell>
+              </TableHeader>
+              <TableBody>
+                {!loaded ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length + 1} className="py-10 text-center text-muted-foreground">
+                      Loading…
+                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-           </div>
-      </div>
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length + 1} className="py-14 text-center">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <p className="text-sm">Nothing here yet.</p>
+                        {canCreate ? (
+                          <Button size="sm" variant="secondary" onClick={openCreate} className="mt-1">
+                            <Plus className="size-4" /> New {def.singular.toLowerCase()}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((row) => (
+                    <TableRow key={row.id}>
+                      {columns.map((f) => (
+                        <TableCell key={f.key} className="whitespace-nowrap">
+                          {renderCell(f, row[f.key], refLabel)}
+                        </TableCell>
+                      ))}
+                      <TableCell className="sticky right-0 bg-card text-right">
+                        {resource === "floors" ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button asChild size="sm" variant="default">
+                              <Link to="/units/$floorId" params={{ floorId: row.id }}>
+                                Manage units
+                              </Link>
+                            </Button>
+                            {canEditRow(row) ? (
+                              <>
+                                <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit floor">
+                                  <Pencil className="size-4" />
+                                </Button>
+                                {canDeleteRow(row) ? (
+                                  <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete floor">
+                                    <Trash2 className="size-4 text-destructive" />
+                                  </Button>
+                                ) : null}
+                              </>
+                            ) : null}
+                          </div>
+                        ) : canEditRow(row) ? (
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit">
+                              <Pencil className="size-4" />
+                            </Button>
+                            {canDeleteRow(row) ? (
+                              <Button variant="ghost" size="icon" onClick={() => requestDelete(row)} aria-label="Delete">
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            View only
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       ) : (
         <div className={`transition-opacity ${isFetching ? "opacity-60" : ""}`}>
           {!loaded ? (
@@ -516,84 +577,162 @@ export function ResourcePage({
               {editing ? `Edit ${def.singular.toLowerCase()}` : `New ${def.singular.toLowerCase()}`}
             </DialogTitle>
             <DialogDescription>{def.description}</DialogDescription>
+          
+          {editing && resource === "properties" ? (
+  <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      Subscription
+    </p>
+    <div className="grid grid-cols-2 gap-y-1">
+      <span className="text-muted-foreground">Plan</span>
+      <span>
+{String(
+  editing["planName"] ??
+    planRowsAll.find((p) => p.id === editing["planId"])?.["name"] ??
+    "—"
+)}      </span>
+      <span className="text-muted-foreground">Status</span>
+      <span>{String(editing["subscriptionStatus"] ?? "—")}</span>
+      <span className="text-muted-foreground">Started</span>
+      <span>{editing["subscriptionStartsAt"] ? String(editing["subscriptionStartsAt"]).slice(0, 10) : "—"}</span>
+      <span className="text-muted-foreground">Ends</span>
+      <span className="flex items-center gap-2">
+        {editing["subscriptionEndsAt"] ? String(editing["subscriptionEndsAt"]).slice(0, 10) : "—"}
+        <SubscriptionDays endsAt={editing["subscriptionEndsAt"]} />
+      </span>
+    </div>
+        {role === "superAdmin" ? (
+      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+        <Select value={newPlanId} onValueChange={setNewPlanId}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Choose plan…" />
+          </SelectTrigger>
+          <SelectContent>
+            {planRows
+              .filter((p) => p["billingCycle"] !== "trial")
+              .map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {String(p["name"])}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!newPlanId}
+          onClick={async () => {
+            try {
+              await propertyApi.setSubscription(editing.id, newPlanId);
+              toast.success("Subscription updated");
+              setNewPlanId("");
+              setOpen(false);
+              void reset();
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Failed to update subscription");
+            }
+          }}
+        >
+          Renew / change plan
+        </Button>
+      </div>
+    ) : null}
+  </div>
+) : null}
+          
           </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-  {def.fields
-    .filter((f) => !f.hideForUnitTypes || !f.hideForUnitTypes.includes(values["unitType"] ?? ""))
-    .map((f) => (
-              <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2 space-y-2" : "space-y-2"}>
-                <Label htmlFor={`field-${f.key}`}>
-                  {f.label}
-                  {f.required ? <span className="text-destructive"> *</span> : null}
-                </Label>
-                {f.type === "entity-select" ? (
-                  <Select
-                    value={values[f.key] || ""}
-                    onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
-                    disabled={fieldLocked(f)}
-                  >
-                    <SelectTrigger id={`field-${f.key}`}>
-                      <SelectValue placeholder={`Select ${f.label.toLowerCase()}…`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {refRows.map((row) => (
-                        <SelectItem key={row.id} value={row.id}>
-                          {String(row[f.labelKey ?? "name"] ?? row.id)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : f.type === "boolean" ? (
-                  <Select
-                    value={values[f.key] || ""}
-                    onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
-                    disabled={fieldLocked(f)}
-                  >
-                    <SelectTrigger id={`field-${f.key}`}>
-                      <SelectValue placeholder="Select…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Yes</SelectItem>
-                      <SelectItem value="false">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : f.type === "select" ? (
-                  <Select
-                    value={values[f.key] || ""}
-                    onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
-                    disabled={fieldLocked(f)}
-                  >
-                    <SelectTrigger id={`field-${f.key}`}>
-                      <SelectValue placeholder="Select…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(f.options ?? []).map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : f.type === "textarea" ? (
-                  <Textarea
-                    id={`field-${f.key}`}
-                    value={values[f.key] ?? ""}
-                    onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                    disabled={fieldLocked(f)}
-                  />
-                ) : (
-                  <Input
-                    id={`field-${f.key}`}
-                    type={f.type === "date" ? "date" : f.type === "number" || f.type === "money" ? "number" : "text"}
-                    placeholder={f.placeholder ?? ""}
-                    value={values[f.key] ?? ""}
-                    onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                    disabled={fieldLocked(f)}
-                  />
-                )}
-              </div>
-            ))}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {def.fields
+              .filter((f) => isFormField(f))
+                            .filter((f) => !f.hideForUnitTypes || !f.hideForUnitTypes.includes(values["unitType"] ?? ""))
+              .filter((f) => showAdvanced || !f.advanced)
+              .sort((a, b) => sectionRank(a) - sectionRank(b))
+              .map((f, i, arr) => (
+                <Fragment key={f.key}>
+                {f.section && f.section !== arr[i - 1]?.section ? (
+                  <p className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:col-span-2">
+                    {f.section}
+                  </p>
+                ) : null}
+                <div className={f.type === "textarea" ? "sm:col-span-2 space-y-2" : "space-y-2"}>
+                  <Label htmlFor={`field-${f.key}`}>
+                    {f.label}
+                    {f.required ? <span className="text-destructive"> *</span> : null}
+                  </Label>
+                  {f.type === "entity-select" ? (
+                    <Select
+                      value={values[f.key] || ""}
+                      onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
+                      disabled={fieldLocked(f)}
+                    >
+                      <SelectTrigger id={`field-${f.key}`}>
+                        <SelectValue placeholder={`Select ${f.label.toLowerCase()}…`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(f.key === planField?.key ? planRows : refRows).map((row) => (
+                          <SelectItem key={row.id} value={row.id}>
+                            {String(row[f.labelKey ?? "name"] ?? row.id)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === "boolean" ? (
+                    <Select
+                      value={values[f.key] || ""}
+                      onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
+                      disabled={fieldLocked(f)}
+                    >
+                      <SelectTrigger id={`field-${f.key}`}>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === "select" ? (
+                    <Select
+                      value={values[f.key] || ""}
+                      onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
+                      disabled={fieldLocked(f)}
+                    >
+                      <SelectTrigger id={`field-${f.key}`}>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(f.options ?? []).map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === "textarea" ? (
+                    <Textarea
+                      id={`field-${f.key}`}
+                      value={values[f.key] ?? ""}
+                      onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                      disabled={fieldLocked(f)}
+                    />
+                  ) : (
+                    <Input
+                      id={`field-${f.key}`}
+                      type={f.type === "date" ? "date" : f.type === "number" || f.type === "money" ? "number" : "text"}
+                      placeholder={f.placeholder ?? ""}
+                      value={values[f.key] ?? ""}
+                      onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                      disabled={fieldLocked(f)}
+                    />
+                  )}
+                               </div>
+                </Fragment>
+              ))}
           </div>
+          {def.fields.some((f) => f.advanced && isFormField(f)) ? (
+            <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setShowAdvanced((v) => !v)}>
+              {showAdvanced ? "Hide" : "Show"} advanced fields
+            </Button>
+          ) : null}
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel

@@ -101,7 +101,7 @@ const ownerNav: NavSection[] = [
     items: [
       { to: "/flat-status", label: "Flat status", icon: Building2 },
       { to: "/admin/admins", label: "Manage managers", icon: Shield },
-      { to: "/property-requests", label: "Property requests", icon: FileQuestion },
+   { to: "/requests", label: "Requests", icon: FileQuestion },
     ],
   },
   {
@@ -121,12 +121,12 @@ const superAdminConsoleNav: NavSection[] = [
       { to: "/admin/admins", label: "Administrators", icon: Shield },
     ],
   },
-    {
+     {
     group: "Platform",
     items: [
       { to: "/reports", label: "Reports", icon: PieChart },
       { to: "/properties", label: "Properties", icon: Home },
-      { to: "/property-requests", label: "Property requests", icon: FileQuestion },
+      { to: "/requests", label: "Requests", icon: FileQuestion },
       { to: "/floors", label: "Floors", icon: Layers },
       { to: "/units", label: "Units", icon: LayoutGrid },
       { to: "/building-accounts", label: "Building accounts", icon: CreditCard },

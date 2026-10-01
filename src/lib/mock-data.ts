@@ -20,6 +20,11 @@ export interface FieldDef {
   required?: boolean;
   ownerEditable?: boolean;
   hideForUnitTypes?: string[];
+  tableOnly?: boolean;
+  createOnly?: boolean;
+  section?: string;
+  advanced?: boolean;
+
 }
 
 export interface ResourceDef {
@@ -61,8 +66,67 @@ export const resources: Record<string, ResourceDef> = {
     description: "Properties on the platform — live backend, superAdmin-managed.",
     apiBacked: true,
     fields: [
-      { key: "title", label: "Title / Building name", inTable: true, required: true },
-      { key: "buildingNumber", label: "Building number" },
+      // { key: "title", label: "Title / Building name", inTable: true, required: true },
+      // { key: "buildingNumber", label: "Building number" },
+      // {
+      //   key: "type",
+      //   label: "Type",
+      //   type: "select",
+      //   options: ["apartment", "house", "villa", "office", "shop", "land"],
+      //   inTable: true,
+      //   required: true,
+      // },
+      // {
+      //   key: "listingType",
+      //   label: "Listing type",
+      //   type: "select",
+      //   options: ["rent"],
+      //   inTable: true,
+      //   required: true,
+      // },
+      // { key: "price", label: "Subscription price", type: "money", inTable: true, tableOnly: true },      // { key: "currency", label: "Currency", type: "select", options: CURRENCY_OPTIONS },
+      // { key: "floors", label: "Floors", type: "number" },
+      // { key: "totalUnits", label: "Total units", type: "number" },
+      // { key: "totalArea", label: "Total area", type: "number" },
+      // { key: "address", label: "Address", inTable: true, required: true },
+      // { key: "city", label: "City", inTable: true, required: true },
+      // { key: "state", label: "State", ownerEditable: true },
+      // { key: "country", label: "Country", inTable: true, required: true },
+      // { key: "postalCode", label: "Postal code", ownerEditable: true },
+      // { key: "latitude", label: "Latitude", type: "number" },
+      // { key: "longitude", label: "Longitude", type: "number" },
+      // {
+      //   key: "status",
+      //   label: "Status",
+      //   type: "select",
+      //   options: ["draft", "active", "inactive", "rented"],
+      //   inTable: true,
+      //   badge: true,
+      // },
+      // {
+      //   key: "ownerId",
+      //   label: "Owner",
+      //   type: "entity-select",
+      //   sourceResource: "ownerAccounts",
+      //   labelKey: "displayLabel",
+      //   inTable: true,
+      //   required: true,
+      // },
+      //       {
+      //   key: "planId",
+      //   label: "Subscription plan",
+      //   type: "entity-select",
+      //   sourceResource: "subscriptions",
+      //   labelKey: "displayLabel",
+      //   required: true,
+      //   createOnly: true,
+      // },
+      // { key: "subscriptionStatus", label: "Subscription", inTable: true, tableOnly: true, badge: true },
+      // { key: "subscriptionEndsAt", label: "Ends", type: "date", inTable: true, tableOnly: true },
+      // { key: "description", label: "Description / note", type: "textarea", ownerEditable: true },
+      
+      { key: "title", label: "Title / Building name", inTable: true, required: true, section: "Basics" },
+      { key: "buildingNumber", label: "Building number", section: "Basics" },
       {
         key: "type",
         label: "Type",
@@ -70,6 +134,7 @@ export const resources: Record<string, ResourceDef> = {
         options: ["apartment", "house", "villa", "office", "shop", "land"],
         inTable: true,
         required: true,
+        section: "Basics",
       },
       {
         key: "listingType",
@@ -78,19 +143,19 @@ export const resources: Record<string, ResourceDef> = {
         options: ["rent"],
         inTable: true,
         required: true,
+        section: "Basics",
       },
-      { key: "price", label: "Subscription price", type: "money", inTable: true, required: true },
-      { key: "currency", label: "Currency", type: "select", options: CURRENCY_OPTIONS },
-      { key: "floors", label: "Floors", type: "number" },
-      { key: "totalUnits", label: "Total units", type: "number" },
-      { key: "totalArea", label: "Total area", type: "number" },
-      { key: "address", label: "Address", inTable: true, required: true },
-      { key: "city", label: "City", inTable: true, required: true },
-      { key: "state", label: "State", ownerEditable: true },
-      { key: "country", label: "Country", inTable: true, required: true },
-      { key: "postalCode", label: "Postal code", ownerEditable: true },
-      { key: "latitude", label: "Latitude", type: "number" },
-      { key: "longitude", label: "Longitude", type: "number" },
+      { key: "price", label: "Subscription price", type: "money", inTable: true, tableOnly: true },
+      { key: "floors", label: "Floors", type: "number", section: "Structure" },
+      { key: "totalUnits", label: "Total units", type: "number", section: "Structure" },
+      { key: "totalArea", label: "Total area", type: "number", section: "Structure" },
+      { key: "address", label: "Address", inTable: true, required: true, section: "Location" },
+      { key: "city", label: "City", inTable: true, required: true, section: "Location" },
+      { key: "state", label: "State",required: true,  ownerEditable: true, section: "Location" },
+      { key: "country", label: "Country", inTable: true, required: true, section: "Location" },
+      { key: "postalCode", label: "Postal code", ownerEditable: true, section: "Location" },
+      { key: "latitude", label: "Latitude", type: "number", section: "Location", advanced: true },
+      { key: "longitude", label: "Longitude", type: "number", section: "Location", advanced: true },
       {
         key: "status",
         label: "Status",
@@ -98,6 +163,7 @@ export const resources: Record<string, ResourceDef> = {
         options: ["draft", "active", "inactive", "rented"],
         inTable: true,
         badge: true,
+        section: "Basics",
       },
       {
         key: "ownerId",
@@ -107,8 +173,24 @@ export const resources: Record<string, ResourceDef> = {
         labelKey: "displayLabel",
         inTable: true,
         required: true,
+        section: "Ownership",
       },
-      { key: "description", label: "Description / note", type: "textarea", ownerEditable: true },
+      {
+        key: "planId",
+        label: "Subscription plan",
+        type: "entity-select",
+        sourceResource: "subscriptions",
+        labelKey: "displayLabel",
+        required: true,
+        createOnly: true,
+        section: "Ownership",
+      },
+      { key: "subscriptionStatus", label: "Subscription", inTable: true, tableOnly: true, badge: true },
+{ key: "subscriptionEndsAt", label: "Subscription ends", type: "date", inTable: true, tableOnly: true },      { key: "description", label: "Description / note", type: "textarea", ownerEditable: true, section: "Notes" },
+
+
+
+
     ],
     seed: [],
   },
@@ -131,7 +213,7 @@ export const resources: Record<string, ResourceDef> = {
       },
   { key: "floorNumber", label: "Floor number", type: "number", inTable: true, required: true },
 { key: "name", label: "Floor name", ownerEditable: true },
-{ key: "totalUnits", label: "Total units", type: "number", inTable: true, required: true, ownerEditable: true },
+{ key: "totalUnits", label: "Total units", type: "number", inTable: true, ownerEditable: true },
 { key: "totalArea", label: "Total area (sqft)", type: "number", inTable: true, ownerEditable: true },
 { key: "areaUnit", label: "Area unit", placeholder: "sqft" },
 {
@@ -514,22 +596,36 @@ export const resources: Record<string, ResourceDef> = {
     ],
   ),
 
-  subscriptions: def(
-    "subscriptions",
-    "Subscription",
-    "Plan",
-    "Platform subscription plan and billing.",
-    [
-      { key: "plan", label: "Plan", inTable: true },
-      { key: "billingCycle", label: "Billing cycle", type: "select", options: ["Monthly", "Yearly"], inTable: true },
-      { key: "amount", label: "Amount", type: "money", inTable: true },
-      { key: "nextBillingDate", label: "Next billing date", type: "date", inTable: true },
-      { key: "status", label: "Status", type: "select", options: ["Active", "Past due", "Cancelled"], inTable: true, badge: true },
+   subscriptions: {
+    key: "subscriptions",
+    title: "Subscription",
+    singular: "Plan",
+    description: "Subscription plans — live backend, superAdmin-managed.",
+    apiBacked: true,
+    fields: [
+      { key: "name", label: "Plan", inTable: true, required: true },
+      {
+        key: "billingCycle",
+        label: "Billing cycle",
+        type: "select",
+        options: ["trial", "monthly", "quarterly", "yearly"],
+        inTable: true,
+        required: true,
+      },
+      { key: "amount", label: "Amount", type: "money", inTable: true, required: true },
+      { key: "durationDays", label: "Duration (days)", type: "number", inTable: true, tableOnly: true },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["active", "inactive"],
+        inTable: true,
+        badge: true,
+        required: true,
+      },
     ],
-    [
-      { plan: "EstateOps Pro", billingCycle: "Monthly", amount: 4900, nextBillingDate: "2026-09-01", status: "Active" },
-    ],
-  ),
+    seed: [],
+  },
 
   buildingAccounts: def(
     "buildingAccounts",

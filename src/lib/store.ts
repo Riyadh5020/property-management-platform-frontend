@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { adminApi, floorApi, propertyApi, unitApi } from "./api";
+import {
+  adminApi,
+  floorApi,
+  propertyApi,
+  subscriptionPlanApi,
+  unitApi,
+  type BillingCycle,
+  type SubscriptionPlanStatus,
+} from "./api";
 import { useAuth } from "./auth";
 import { resources, type ResourceDef, type Row } from "./mock-data";
 
@@ -51,7 +59,7 @@ function subscribe(resource: string, fn: () => void) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Live-backend resources (Property / Floor / Unit)                    */
+/* Live-backend resources (Property / Floor / Unit / Plans)            */
 /* ------------------------------------------------------------------ */
 
 type ApiAdapter = {
@@ -60,6 +68,12 @@ type ApiAdapter = {
   update: (id: string, values: Record<string, unknown>) => Promise<Record<string, unknown>>;
   remove: (id: string) => Promise<void>;
 };
+
+// Label shown in the "Subscription plan" dropdown, e.g. "Monthly — ৳4,900 (30 days)".
+function planLabel(name: string, amount: number, durationDays: number) {
+  const price = amount === 0 ? "Free" : `৳${amount.toLocaleString("en-US")}`;
+  return `${name} — ${price} (${durationDays} days)`;
+}
 
 const apiAdapters: Record<string, ApiAdapter> = {
   properties: {
@@ -82,6 +96,52 @@ const apiAdapters: Record<string, ApiAdapter> = {
     create: (v) => unitApi.create(v) as unknown as Promise<Record<string, unknown>>,
     update: (id, v) => unitApi.update(id, v) as unknown as Promise<Record<string, unknown>>,
     remove: (id) => unitApi.remove(id).then(() => undefined),
+  },
+  subscriptions: {
+    list: (params) =>
+      subscriptionPlanApi.list(params ?? {}).then((res) => {
+        const items = res.items.map((plan) => {
+          const amount = Number(plan.amount); // pg returns NUMERIC as a string
+          return {
+            ...plan,
+            amount,
+            displayLabel: planLabel(plan.name, amount, plan.durationDays),
+          };
+        }) as unknown as Record<string, unknown>[];
+        return { items, total: res.total };
+      }),
+    create: (v) => {
+      const body: {
+        name: string;
+        billingCycle: BillingCycle;
+        amount: number;
+        status?: SubscriptionPlanStatus;
+      } = {
+        name: String(v["name"] ?? ""),
+        billingCycle: v["billingCycle"] as BillingCycle,
+        amount: Number(v["amount"] ?? 0),
+      };
+
+      if (v["status"]) body.status = v["status"] as SubscriptionPlanStatus;
+
+      return subscriptionPlanApi.create(body) as unknown as Promise<Record<string, unknown>>;
+    },
+    update: (id, v) => {
+      const body: {
+        name?: string;
+        billingCycle?: BillingCycle;
+        amount?: number;
+        status?: SubscriptionPlanStatus;
+      } = {};
+
+      if (v["name"] !== undefined) body.name = String(v["name"]);
+      if (v["billingCycle"] !== undefined) body.billingCycle = v["billingCycle"] as BillingCycle;
+      if (v["amount"] !== undefined) body.amount = Number(v["amount"]);
+      if (v["status"] !== undefined) body.status = v["status"] as SubscriptionPlanStatus;
+
+      return subscriptionPlanApi.update(id, body) as unknown as Promise<Record<string, unknown>>;
+    },
+    remove: (id) => subscriptionPlanApi.remove(id).then(() => undefined),
   },
   ownerAccounts: {
     list: () =>
