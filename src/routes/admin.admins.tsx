@@ -67,19 +67,17 @@ function AdminAdminsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ApiAdmin | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
-const auth = useAuth();
-const actingRole = auth.admin?.admin?.role;
-const targetRoleForCreate: AdminRole = actingRole === "superAdmin" ? "owner" : "manager";
+  const auth = useAuth();
+  const actingRole = auth.admin?.admin?.role;
+  const targetRoleForCreate: AdminRole = actingRole === "superAdmin" ? "owner" : "manager";
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
-useEffect(() => {
-  if (auth.ready && actingRole === "manager") {
-    navigate({ to: "/dashboard", replace: true });
-  }
-}, [auth.ready, actingRole, navigate]);
-
-
+  useEffect(() => {
+    if (auth.ready && actingRole === "manager") {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [auth.ready, actingRole, navigate]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,11 +95,11 @@ useEffect(() => {
     void load();
   }, [load]);
 
- const openCreate = () => {
-  setEditing(null);
-  setForm({ ...emptyForm, role: targetRoleForCreate });
-  setOpen(true);
-};
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ ...emptyForm, role: targetRoleForCreate });
+    setOpen(true);
+  };
 
   const openEdit = (admin: ApiAdmin) => {
     setEditing(admin);
@@ -123,7 +121,7 @@ useEffect(() => {
           firstName: form.firstName,
           lastName: form.lastName,
           email: form.email,
-          role: form.role,
+          ...(actingRole === "superAdmin" ? { role: form.role } : {}),
         });
         toast.success("Administrator updated");
       } else {
@@ -148,10 +146,12 @@ useEffect(() => {
   };
 
   return (
-    <AppShell variant="console">
+    <AppShell variant={actingRole === "superAdmin" ? "console" : "workspace"}>
       <PageHeader
         title="Administrators"
-        description="GET /admins — super-admin token required by the backend."
+        description={
+          actingRole === "superAdmin" ? "All administrators." : "Managers under your properties."
+        }
         actions={
           <>
             <Button size="sm" variant="secondary" onClick={() => void load()}>
@@ -296,33 +296,34 @@ useEffect(() => {
               </div>
             )}
 
-
-                       <div className="space-y-2">
-              <Label>Role</Label>
-              {editing ? (
-                <Select
-                  value={form.role}
-                  onValueChange={(value) => setForm({ ...form, role: value as AdminRole })}
-                >
-                  <SelectTrigger id="role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  Will be created as <span className="font-medium text-foreground">{targetRoleForCreate}</span> — role is determined by your account type.
-                </p>
-              )}
-            </div>
-
-
+            {!editing || actingRole === "superAdmin" ? (
+              <div className="space-y-2">
+                <Label>Role</Label>
+                {editing ? (
+                  <Select
+                    value={form.role}
+                    onValueChange={(value) => setForm({ ...form, role: value as AdminRole })}
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    Will be created as{" "}
+                    <span className="font-medium text-foreground">{targetRoleForCreate}</span> —
+                    role is determined by your account type.
+                  </p>
+                )}
+              </div>
+            ) : null}
 
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>

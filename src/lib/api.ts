@@ -1,3 +1,5 @@
+
+
 const DEFAULT_BASE_URL =
   (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ??
   "http://localhost:8000/api/v1";
@@ -272,9 +274,9 @@ export const adminApi = {
     role: AdminRole;
   }) => apiRequest<ApiAdmin>("/admins/create", { method: "POST", body, auth: "admin" }),
   getAdmin: (id: string) => apiRequest<ApiAdmin>(`/admins/${id}`, { auth: "admin" }),
-  updateAdmin: (
+   updateAdmin: (
     id: string,
-    body: { firstName: string; lastName: string; email: string; role: AdminRole },
+    body: { firstName: string; lastName: string; email: string; role?: AdminRole },
   ) => apiRequest<ApiAdmin>(`/admins/${id}`, { method: "PUT", body, auth: "admin" }),
   updateAdminStatus: (id: string, status: AccountStatus) =>
     apiRequest<ApiAdmin>(`/admins/${id}/status`, { method: "PATCH", body: { status }, auth: "admin" }),
@@ -316,13 +318,49 @@ export interface ApiProperty {
   images?: string[] | null;
   status: PropertyStatus;
   ownerId: string;
-    planId?: string | null;
+
+  // Add these
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  floorCount?: number | null;
+
+  planId?: string | null;
   subscriptionStartsAt?: string | null;
   subscriptionEndsAt?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
   createdAt?: string;
   updatedAt?: string;
 }
+// export interface ApiProperty {
+//   id: string;
+//   title: string;
+//   buildingNumber?: string | null;
+//   description?: string | null;
+//   type: PropertyType;
+//   listingType: PropertyListingType;
+//   price: number;
+//   currency?: string;
+//   floors?: number | null;
+//   totalUnits?: number | null;
+//   totalArea?: number | null;
+//   address: string;
+//   city: string;
+//   state?: string | null;
+//   country: string;
+//   postalCode?: string | null;
+//   latitude?: number | null;
+//   longitude?: number | null;
+//   amenities?: Record<string, unknown> | null;
+//   images?: string[] | null;
+//   status: PropertyStatus;
+//   ownerId: string;
+//     planId?: string | null;
+//   subscriptionStartsAt?: string | null;
+//   subscriptionEndsAt?: string | null;
+//   subscriptionStatus?: SubscriptionStatus | null;
+//   createdAt?: string;
+//   updatedAt?: string;
+// }
 
 export interface ApiFloor {
   id: string;
@@ -390,8 +428,7 @@ function toListResult<T>(payload: unknown): ListResult<T> {
 }
 
 export const propertyApi = {
-  list: (params: ListParams & { status?: string; type?: string; listingType?: string } = {}) =>
-    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) =>
+  list: (params: ListParams & { status?: string; type?: string; listingType?: string; ownerId?: string } = {}) =>    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) =>
       toListResult<ApiProperty>(res),
     ),
   get: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { auth: "admin" }),
@@ -441,7 +478,18 @@ export interface ApiPropertyRequest {
   ownerId: string;
   ownerName?: string | null;
   ownerEmail?: string | null;
-  note: string;
+    floorCount?: number;
+    note?: string | null;
+  title?: string | null;
+  buildingNumber?: string | null;
+  floors?: number | null;
+  totalUnits?: number | null;
+  totalArea?: number | string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
   status: PropertyRequestStatus;
   reviewedBy?: string | null;
   reviewedAt?: string | null;
@@ -455,15 +503,27 @@ export const propertyRequestApi = {
     apiRequest<unknown>(`/property-requests${toQuery(params)}`, { auth: "admin" }).then((res) =>
       toListResult<ApiPropertyRequest>(res),
     ),
-  create: (body: { note: string }) =>
+   create: (body: {
+    title: string;
+    buildingNumber?: string | null;
+    floors: number;
+    totalUnits?: number | null;
+    totalArea?: number | null;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode?: string | null;
+  }) =>
     apiRequest<ApiPropertyRequest>("/property-requests/create", {
       method: "POST",
       body,
       auth: "admin",
     }),
-  approve: (id: string) =>
+  approve: (id: string, planId: string) =>
     apiRequest<ApiPropertyRequest>(`/property-requests/${id}/approve`, {
       method: "PATCH",
+      body: { planId },
       auth: "admin",
     }),
   deny: (id: string) =>
@@ -480,6 +540,7 @@ export interface ApiFloorRequest {
   ownerId: string;
   ownerName?: string | null;
   ownerEmail?: string | null;
+    floorCount?: number;
   requestedFloorCount: number;
   note: string;
   status: FloorRequestStatus;

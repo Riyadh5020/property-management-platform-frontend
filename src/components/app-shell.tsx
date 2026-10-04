@@ -25,10 +25,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { CountBadge } from "@/components/count-badge";
 import { Button } from "@/components/ui/button";
 import { displayName, initials, useAuth } from "@/lib/auth";
+import { usePendingRequests } from "@/lib/use-pending-requests";
 import { cn } from "@/lib/utils";
-
 interface NavItem {
   to: string;
   label: string;
@@ -152,7 +153,7 @@ export function AppShell({
   const isConsole = variant === "console" || role === "superAdmin";
 
   const nav = isConsole ? superAdminConsoleNav : role === "owner" ? ownerNav : managerNav;
-
+  const pending = usePendingRequests();
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
@@ -224,7 +225,8 @@ export function AppShell({
                     }}
                   >
                     <item.icon className="size-4 shrink-0" />
-                    {item.label}
+                                       <span className="flex-1">{item.label}</span>
+                                       {item.to === "/requests" ? <CountBadge n={pending.total} /> : null}
                   </Link>
                 ))}
               </div>

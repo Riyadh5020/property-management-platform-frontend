@@ -1,4 +1,5 @@
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { SubscriptionAlerts } from "@/components/subscription-alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,10 +95,14 @@ export function ResourcePage({
   resource,
   prefillValues,
   onPrefillConsumed,
+  fixedParentId,
+  fixedOwnerId,
 }: {
   resource: string;
   prefillValues?: Record<string, string> | null;
   onPrefillConsumed?: () => void;
+  fixedParentId?: string | undefined;
+  fixedOwnerId?: string | undefined;
 }) {
   const def = resources[resource]!;
   const [query, setQuery] = useState("");
@@ -109,8 +114,7 @@ export function ResourcePage({
     return () => clearTimeout(t);
   }, [query]);
 
-  const [parentFilter, setParentFilter] = useState("");
-  const parentFilterField =
+  const [parentFilter, setParentFilter] = useState(fixedParentId ?? "");  const parentFilterField =
     resource === "floors" ? "propertyId" : resource === "units" ? "floorId" : null;
 
   const [page, setPage] = useState(0);
@@ -124,6 +128,7 @@ export function ResourcePage({
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
         ...(parentFilterField ? { [parentFilterField]: parentFilter || undefined } : {}),
+        ...(fixedOwnerId ? { ownerId: fixedOwnerId } : {}),
       }
     : undefined;
 
@@ -174,8 +179,8 @@ export function ResourcePage({
   const canDeleteRow = (row: Row) =>
     role === "superAdmin" || (resource === "units" && role === "owner" && isOwnRow(row));
 
-  const canEditRow = (row: Row) => role === "superAdmin" || (role === "owner" && isOwnRow(row));
-
+const canEditRow = (row: Row) =>
+  role === "superAdmin" || (role === "owner" && resource !== "floors" && isOwnRow(row));
   const [editing, setEditing] = useState<Row | null>(null);
   const editingAsRestrictedOwner = role === "owner" && editing !== null;
   const fieldLocked = (f: FieldDef) => editingAsRestrictedOwner && !f.ownerEditable;
@@ -204,10 +209,14 @@ export function ResourcePage({
     return rows.filter((row) => def.fields.some((f) => String(row[f.key] ?? "").toLowerCase().includes(q)));
   }, [rows, query, def.fields, apiBacked]);
 
-    const openCreate = () => {
+     const openCreate = () => {
     setShowAdvanced(false);
     setEditing(null);
-    setValues(emptyValues(def.fields));
+     setValues({
+      ...emptyValues(def.fields),
+      ...(fixedParentId && parentFilterField ? { [parentFilterField]: fixedParentId } : {}),
+      ...(fixedOwnerId ? { ownerId: fixedOwnerId } : {}),
+    });
     setOpen(true);
   };
 
@@ -299,7 +308,23 @@ export function ResourcePage({
           </>
         }
       />
+           {fixedParentId ? (
+        <div className="mb-4 flex items-center gap-3 text-sm">
+          <Link to="/floors" className="text-muted-foreground hover:text-foreground">
+            ← All properties
+          </Link>
+          <span className="font-medium">{refLabel(fixedParentId)}</span>
+        </div>
+      ) : null}
 
+      {fixedOwnerId ? (
+        <div className="mb-4 flex items-center gap-3 text-sm">
+          <Link to="/properties" className="text-muted-foreground hover:text-foreground">
+            ← All owners
+          </Link>
+          <span className="font-medium">{refLabel(fixedOwnerId)}</span>
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -325,8 +350,7 @@ export function ResourcePage({
             </SelectContent>
           </Select>
         ) : null}
-        {parentFilterField && refField ? (
-          <Select value={parentFilter || "__all__"} onValueChange={(v) => setParentFilter(v === "__all__" ? "" : v)}>
+        {parentFilterField && refField && !fixedParentId ? (          <Select value={parentFilter || "__all__"} onValueChange={(v) => setParentFilter(v === "__all__" ? "" : v)}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder={`All ${refField.label.toLowerCase()}s`} />
             </SelectTrigger>
@@ -389,23 +413,9 @@ export function ResourcePage({
           </Button>
         </div>
       ) : null}
-{resource === "properties" && role === "owner"
-  ? rows
-      .map((r) => ({ r, d: daysLeft(r["subscriptionEndsAt"]) }))
-      .filter(({ d }) => d !== null && d <= 30)
-      .map(({ r, d }) => (
-        <div
-          key={r.id}
-          className={`mb-3 rounded-lg border p-3 text-sm ${
-            (d as number) <= 7 ? "border-destructive/50 text-destructive" : "border-border"
-          }`}
-        >
-          Subscription for <strong>{String(r["title"])}</strong>{" "}
-          {(d as number) <= 0 ? "has expired." : `ends in ${d} day${d === 1 ? "" : "s"}.`}{" "}
-          Contact your administrator to renew.
-        </div>
-      ))
-  : null}
+      {resource === "properties" && (role === "owner" || role === "superAdmin") ? (
+               <SubscriptionAlerts rows={rows} canRenew={role === "superAdmin"} />
+      ) : null}
       {viewMode === "table" ? (
         <div className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity ${isFetching ? "opacity-60" : ""}`}>
           <div className="overflow-x-auto">
@@ -511,9 +521,18 @@ export function ResourcePage({
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((row) => {
-                const titleField = columns[0];
-                const titleValue = titleField ? String(row[titleField.key] ?? "Untitled") : "Untitled";
-                const restColumns = columns.slice(1);
+                               const titleField = columns[0];
+                const titleValue =
+                  resource === "floors"
+                    ? `Floor ${String(row["floorNumber"] ?? "")}${row["name"] ? ` — ${String(row["name"])}` : ""}`
+                    : titleField?.type === "entity-select"
+                      ? (refLabel(row[titleField.key]) ?? "Untitled")
+                      : titleField
+                        ? String(row[titleField.key] ?? "Untitled")
+                        : "Untitled";
+                const restColumns = columns
+                  .slice(1)
+                  .filter((f) => !(resource === "floors" && f.key === "floorNumber"));
 
                 return (
                   <div key={row.id} className="rounded-xl border border-border bg-card p-4">
@@ -556,7 +575,7 @@ export function ResourcePage({
                             </Button>
                           ) : null}
                         </>
-                      ) : (
+                                            ) : resource === "floors" ? null :  (
                         <Badge variant="outline" className="text-[10px] font-normal">
                           View only
                         </Badge>

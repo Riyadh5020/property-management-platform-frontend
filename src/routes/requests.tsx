@@ -1,10 +1,12 @@
 
+
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Plus, RefreshCw, Search, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { CountBadge } from "@/components/count-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,12 +40,15 @@ import {
   type ApiFloorRequest,
   type ApiProperty,
   type ApiPropertyRequest,
+  type ApiSubscriptionPlan,
   floorRequestApi,
   propertyApi,
   propertyRequestApi,
+  subscriptionPlanApi,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-
+import { usePendingRequests } from "@/lib/use-pending-requests";
+import { useQueryClient } from "@tanstack/react-query";
 export const Route = createFileRoute("/requests")({
   head: () => ({
     meta: [
@@ -129,11 +134,14 @@ function RequestFilters({
   );
 }
 
+
+
+
 function RequestsPage() {
   const { admin } = useAuth();
   const role = admin?.admin?.role;
   const isSuperAdmin = role === "superAdmin";
-
+const pending = usePendingRequests();
   return (
     <AppShell variant={isSuperAdmin ? "console" : "workspace"}>
       <PageHeader
@@ -147,8 +155,14 @@ function RequestsPage() {
 
       <Tabs defaultValue="properties">
         <TabsList>
-          <TabsTrigger value="properties">Property requests</TabsTrigger>
-          <TabsTrigger value="floors">Floor requests</TabsTrigger>
+                    <TabsTrigger value="properties">
+            Property requests
+            {isSuperAdmin ? <CountBadge n={pending.property} className="ml-2" /> : null}
+          </TabsTrigger>
+          <TabsTrigger value="floors">
+            Floor requests
+            {isSuperAdmin ? <CountBadge n={pending.floor} className="ml-2" /> : null}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="properties">
@@ -163,51 +177,70 @@ function RequestsPage() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Property requests panel                                             */
-/* ------------------------------------------------------------------ */
 
-function PropertyRequestsPanel({
-  isSuperAdmin,
-}: {
-  isSuperAdmin: boolean;
-}) {
+const emptyPropertyForm = {
+  title: "",
+  buildingNumber: "",
+  floors: "",
+  totalUnits: "",
+  totalArea: "",
+  address: "",
+  city: "",
+  state: "",
+  country: "",
+  postalCode: "",
+};
+type PropertyForm = typeof emptyPropertyForm;
+
+const PROPERTY_FIELDS: {
+  key: keyof PropertyForm;
+  label: string;
+  required?: boolean;
+  number?: boolean;
+}[] = [
+  { key: "title", label: "Title / Building name", required: true },
+  { key: "buildingNumber", label: "Building number" },
+  { key: "floors", label: "Floors", required: true, number: true },
+  { key: "totalUnits", label: "Total units", number: true },
+  { key: "totalArea", label: "Total area", number: true },
+  { key: "address", label: "Address", required: true },
+  { key: "city", label: "City", required: true },
+  { key: "state", label: "State", required: true },
+  { key: "country", label: "Country", required: true },
+  { key: "postalCode", label: "Postal code" },
+];
+
+function PropertyRequestsPanel({ isSuperAdmin }: { isSuperAdmin: boolean }) {
+  const qc = useQueryClient();
   const [requests, setRequests] = useState<ApiPropertyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState("");
+  const [form, setForm] = useState<PropertyForm>(emptyPropertyForm);
   const [submitting, setSubmitting] = useState(false);
   const [actioningId, setActioningId] = useState<string | null>(null);
+  const [approving, setApproving] = useState<ApiPropertyRequest | null>(null);
+  const [plans, setPlans] = useState<ApiSubscriptionPlan[]>([]);
+  const [planId, setPlanId] = useState("");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const visible = sortPendingFirst(requests).filter((r) => {
-    if (statusFilter !== "all" && r.status !== statusFilter) {
-      return false;
-    }
-
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
     const q = search.trim().toLowerCase();
-
-    if (!q) {
-      return true;
-    }
-
-    return [r.ownerName, r.ownerEmail, r.note].some((v) =>
+    if (!q) return true;
+    return [r.ownerName, r.ownerEmail, r.title, r.city, r.note].some((v) =>
       (v ?? "").toLowerCase().includes(q),
     );
   });
 
   const load = useCallback(async () => {
     setLoading(true);
-
     try {
       const result = await propertyRequestApi.list({ limit: 100 });
       setRequests(result.items);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Could not load requests",
-      );
+      toast.error(err instanceof Error ? err.message : "Could not load requests");
     } finally {
       setLoading(false);
     }
@@ -218,55 +251,72 @@ function PropertyRequestsPanel({
   }, [load]);
 
   const submitRequest = async () => {
-    if (!note.trim()) {
-      toast.error("Please describe why you need an additional property");
+    const missing = PROPERTY_FIELDS.find((f) => f.required && !form[f.key].trim());
+    if (missing) {
+      toast.error(`${missing.label} is required`);
+      return;
+    }
+    const floors = Number(form.floors);
+    if (!Number.isInteger(floors) || floors < 1) {
+      toast.error("Floors must be a whole number of 1 or more");
       return;
     }
 
     setSubmitting(true);
-
     try {
       await propertyRequestApi.create({
-        note: note.trim(),
+        title: form.title.trim(),
+        buildingNumber: form.buildingNumber.trim() || null,
+        floors,
+        totalUnits: form.totalUnits ? Number(form.totalUnits) : null,
+        totalArea: form.totalArea ? Number(form.totalArea) : null,
+        address: form.address.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        country: form.country.trim(),
+        postalCode: form.postalCode.trim() || null,
       });
-
       toast.success("Request submitted — waiting for superAdmin review");
-
       setOpen(false);
-      setNote("");
-
+      setForm(emptyPropertyForm);
       await load();
+      void qc.invalidateQueries({ queryKey: ["pending-requests"] });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Could not submit request",
-      );
+      toast.error(err instanceof Error ? err.message : "Could not submit request");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const decide = async (
-    id: string,
-    decision: "approve" | "deny",
-  ) => {
-    setActioningId(id);
+  const openApprove = async (req: ApiPropertyRequest) => {
+    setApproving(req);
+    setPlanId("");
+    if (plans.length === 0) {
+      try {
+        const res = await subscriptionPlanApi.list({ status: "active", limit: 100 });
+        setPlans(res.items);
+      } catch {
+        toast.error("Could not load subscription plans");
+      }
+    }
+  };
 
+  const decide = async (id: string, decision: "approve" | "deny", plan?: string) => {
+    setActioningId(id);
     try {
       if (decision === "approve") {
-        await propertyRequestApi.approve(id);
+        await propertyRequestApi.approve(id, plan ?? "");
       } else {
         await propertyRequestApi.deny(id);
       }
-
       toast.success(
-        `Request ${decision === "approve" ? "approved" : "denied"}`,
+        decision === "approve" ? "Request approved — property created" : "Request denied",
       );
-
+      setApproving(null);
       await load();
+      void qc.invalidateQueries({ queryKey: ["pending-requests"] });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Could not update request",
-      );
+      toast.error(err instanceof Error ? err.message : "Could not update request");
     } finally {
       setActioningId(null);
     }
@@ -275,11 +325,7 @@ function PropertyRequestsPanel({
   return (
     <div className="mt-4">
       <div className="mb-4 flex items-center justify-end gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void load()}
-        >
+        <Button variant="ghost" size="sm" onClick={() => void load()}>
           <RefreshCw className="size-4" />
           Refresh
         </Button>
@@ -287,7 +333,10 @@ function PropertyRequestsPanel({
         {!isSuperAdmin ? (
           <Button
             size="sm"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setForm(emptyPropertyForm);
+              setOpen(true);
+            }}
           >
             <Plus className="size-4" />
             New request
@@ -300,7 +349,7 @@ function PropertyRequestsPanel({
         onSearch={setSearch}
         status={statusFilter}
         onStatus={setStatusFilter}
-        placeholder="Search owner or note…"
+        placeholder="Search owner, building or city…"
       />
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -308,21 +357,13 @@ function PropertyRequestsPanel({
           <Table>
             <TableHeader>
               <TableRow>
-                {isSuperAdmin ? (
-                  <TableHead>Requested by</TableHead>
-                ) : null}
-
-                <TableHead>Note</TableHead>
+                {isSuperAdmin ? <TableHead>Requested by</TableHead> : null}
+                <TableHead>Property</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Submitted</TableHead>
                 <TableHead>Reviewed</TableHead>
                 <TableHead>Used</TableHead>
-
-                {isSuperAdmin ? (
-                  <TableHead className="text-right">
-                    Actions
-                  </TableHead>
-                ) : null}
+                {isSuperAdmin ? <TableHead className="text-right">Actions</TableHead> : null}
               </TableRow>
             </TableHeader>
 
@@ -350,27 +391,22 @@ function PropertyRequestsPanel({
                   <TableRow key={req.id}>
                     {isSuperAdmin ? (
                       <TableCell className="whitespace-nowrap">
-                        <div className="text-sm font-medium">
-                          {req.ownerName || "Unknown"}
-                        </div>
-
-                        <div className="text-xs text-muted-foreground">
-                          {req.ownerEmail ?? ""}
-                        </div>
+                        <div className="text-sm font-medium">{req.ownerName || "Unknown"}</div>
+                        <div className="text-xs text-muted-foreground">{req.ownerEmail ?? ""}</div>
                       </TableCell>
                     ) : null}
 
-                    <TableCell
-                      className="max-w-xs truncate"
-                      title={req.note}
-                    >
-                      {req.note}
+                    <TableCell className="max-w-xs" title={req.address ?? ""}>
+                      <div className="truncate text-sm font-medium">
+                        {req.title ?? req.note ?? "—"}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {[req.city, req.country].filter(Boolean).join(", ")}
+                      </div>
                     </TableCell>
 
                     <TableCell>
-                      <Badge variant={statusVariant(req.status)}>
-                        {req.status}
-                      </Badge>
+                      <Badge variant={statusVariant(req.status)}>{req.status}</Badge>
                     </TableCell>
 
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
@@ -393,9 +429,7 @@ function PropertyRequestsPanel({
                               variant="ghost"
                               size="icon"
                               disabled={actioningId === req.id}
-                              onClick={() =>
-                                void decide(req.id, "approve")
-                              }
+                              onClick={() => void openApprove(req)}
                               aria-label="Approve"
                             >
                               <Check className="size-4 text-emerald-600" />
@@ -405,18 +439,14 @@ function PropertyRequestsPanel({
                               variant="ghost"
                               size="icon"
                               disabled={actioningId === req.id}
-                              onClick={() =>
-                                void decide(req.id, "deny")
-                              }
+                              onClick={() => void decide(req.id, "deny")}
                               aria-label="Deny"
                             >
                               <X className="size-4 text-destructive" />
                             </Button>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">
-                            Reviewed
-                          </span>
+                          <span className="text-xs text-muted-foreground">Reviewed</span>
                         )}
                       </TableCell>
                     ) : null}
@@ -428,49 +458,78 @@ function PropertyRequestsPanel({
         </div>
       </div>
 
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-      >
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Request an additional property</DialogTitle>
+            <DialogDescription>
+              Fill in the property details. On approval it is created automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-3">
+            {PROPERTY_FIELDS.map((f) => (
+              <div key={f.key} className="space-y-2">
+                <Label htmlFor={`pr-${f.key}`}>
+                  {f.label} {f.required ? <span className="text-destructive">*</span> : null}
+                </Label>
+                <Input
+                  id={`pr-${f.key}`}
+                  type={f.number ? "number" : "text"}
+                  min={f.number ? 0 : undefined}
+                  value={form[f.key]}
+                  onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void submitRequest()} disabled={submitting}>
+              {submitting ? "Submitting…" : "Submit request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={approving !== null} onOpenChange={(o) => !o && setApproving(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Request an additional property
-            </DialogTitle>
-
+            <DialogTitle>Approve “{approving?.title ?? "property"}”</DialogTitle>
             <DialogDescription>
-              Tell the superAdmin why you need another property.
-              You'll be notified once it's reviewed.
+              The property is created as active for {approving?.ownerName || "the owner"}. Choose
+              its subscription plan.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
-            <Label htmlFor="request-note">
-              Reason
-            </Label>
-
-            <Textarea
-              id="request-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. Expanding to a second building in Chattogram"
-              rows={4}
-            />
+            <Label>Subscription plan</Label>
+            <Select value={planId} onValueChange={setPlanId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select subscription plan…" />
+              </SelectTrigger>
+              <SelectContent>
+                {plans.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} — {p.billingCycle}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="secondary" onClick={() => setApproving(null)}>
               Cancel
             </Button>
-
             <Button
-              onClick={() => void submitRequest()}
-              disabled={submitting}
+              disabled={!planId || actioningId === approving?.id}
+              onClick={() => approving && void decide(approving.id, "approve", planId)}
             >
-              {submitting ? "Submitting…" : "Submit request"}
+              Approve & create
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -478,7 +537,6 @@ function PropertyRequestsPanel({
     </div>
   );
 }
-
 /* ------------------------------------------------------------------ */
 /* Floor requests panel                                                */
 /* ------------------------------------------------------------------ */
@@ -488,6 +546,7 @@ function FloorRequestsPanel({
 }: {
   isSuperAdmin: boolean;
 }) {
+    const qc = useQueryClient();
   const [requests, setRequests] = useState<ApiFloorRequest[]>([]);
   const [properties, setProperties] = useState<ApiProperty[]>([]);
   const [loading, setLoading] = useState(true);
@@ -597,8 +656,9 @@ function FloorRequestsPanel({
       setRequestedFloorCount("");
       setNote("");
 
-      await load();
-    } catch (err) {
+         await load();
+      void qc.invalidateQueries({ queryKey: ["pending-requests"] });
+        } catch (err) {
       toast.error(
         err instanceof Error
           ? err.message
@@ -631,6 +691,7 @@ function FloorRequestsPanel({
       );
 
       await load();
+      void qc.invalidateQueries({ queryKey: ["pending-requests"] });
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -900,3 +961,4 @@ function FloorRequestsPanel({
   );
 }
 
+``
