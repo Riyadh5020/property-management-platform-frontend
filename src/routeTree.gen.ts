@@ -12,8 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AmenitiesRouteImport } from './routes/amenities'
 import { Route as BillingRouteImport } from './routes/billing'
-import { Route as BuildingAccountsRouteImport } from './routes/building-accounts'
-import { Route as BuildingsRouteImport } from './routes/buildings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EmergencyContactsRouteImport } from './routes/emergency-contacts'
 import { Route as ExpensesRouteImport } from './routes/expenses'
@@ -54,16 +52,6 @@ const AmenitiesRoute = AmenitiesRouteImport.update({
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuildingAccountsRoute = BuildingAccountsRouteImport.update({
-  id: '/building-accounts',
-  path: '/building-accounts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuildingsRoute = BuildingsRouteImport.update({
-  id: '/buildings',
-  path: '/buildings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -201,8 +189,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
-  '/building-accounts': typeof BuildingAccountsRoute
-  '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
@@ -234,8 +220,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
-  '/building-accounts': typeof BuildingAccountsRoute
-  '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
@@ -268,8 +252,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
-  '/building-accounts': typeof BuildingAccountsRoute
-  '/buildings': typeof BuildingsRoute
   '/dashboard': typeof DashboardRoute
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
@@ -303,8 +285,6 @@ export interface FileRouteTypes {
     | '/'
     | '/amenities'
     | '/billing'
-    | '/building-accounts'
-    | '/buildings'
     | '/dashboard'
     | '/emergency-contacts'
     | '/expenses'
@@ -336,8 +316,6 @@ export interface FileRouteTypes {
     | '/'
     | '/amenities'
     | '/billing'
-    | '/building-accounts'
-    | '/buildings'
     | '/dashboard'
     | '/emergency-contacts'
     | '/expenses'
@@ -369,8 +347,6 @@ export interface FileRouteTypes {
     | '/'
     | '/amenities'
     | '/billing'
-    | '/building-accounts'
-    | '/buildings'
     | '/dashboard'
     | '/emergency-contacts'
     | '/expenses'
@@ -403,8 +379,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AmenitiesRoute: typeof AmenitiesRoute
   BillingRoute: typeof BillingRoute
-  BuildingAccountsRoute: typeof BuildingAccountsRoute
-  BuildingsRoute: typeof BuildingsRoute
   DashboardRoute: typeof DashboardRoute
   EmergencyContactsRoute: typeof EmergencyContactsRoute
   ExpensesRoute: typeof ExpensesRoute
@@ -454,20 +428,6 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/building-accounts': {
-      id: '/building-accounts'
-      path: '/building-accounts'
-      fullPath: '/building-accounts'
-      preLoaderRoute: typeof BuildingAccountsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/buildings': {
-      id: '/buildings'
-      path: '/buildings'
-      fullPath: '/buildings'
-      preLoaderRoute: typeof BuildingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -659,8 +619,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AmenitiesRoute: AmenitiesRoute,
   BillingRoute: BillingRoute,
-  BuildingAccountsRoute: BuildingAccountsRoute,
-  BuildingsRoute: BuildingsRoute,
   DashboardRoute: DashboardRoute,
   EmergencyContactsRoute: EmergencyContactsRoute,
   ExpensesRoute: ExpensesRoute,

@@ -51,5 +51,5 @@ function FloorsRoute() {
     );
   }
 
-  return <ResourcePage key={propertyId} resource="floors" fixedParentId={propertyId} />;
+  return <ResourcePage key={propertyId} resource="floors" fixedParentId={propertyId} backOwnerId={ownerId} />;
 }

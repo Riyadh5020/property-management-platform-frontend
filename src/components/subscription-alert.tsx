@@ -20,10 +20,18 @@ export function SubscriptionPill({ endsAt }: { endsAt: unknown }) {
   );
 }
 
-export function SubscriptionAlerts({ rows, canRenew }: { rows: Row[]; canRenew: boolean }) {
+export function SubscriptionAlerts({
+  rows,
+  canRenew,
+  onOpen,
+}: {
+  rows: Row[];
+  canRenew: boolean;
+  onOpen?: (row: Row) => void;
+}) {
   const due = rows
     .map((r) => ({ r, d: daysLeft(r["subscriptionEndsAt"]) }))
-    .filter((x): x is { r: Row; d: number } => x.d !== null && x.d <= 30);
+    .filter((x): x is { r: Row; d: number } => x.d !== null && x.d <= 7);
 
   if (due.length === 0) return null;
 
@@ -34,9 +42,15 @@ export function SubscriptionAlerts({ rows, canRenew }: { rows: Row[]; canRenew: 
         return (
           <div
             key={r.id}
+            onClick={() => onOpen?.(r)}
+            onKeyDown={(e) => {
+              if (onOpen && e.key === "Enter") onOpen(r);
+            }}
+            role={onOpen ? "button" : undefined}
+            tabIndex={onOpen ? 0 : undefined}
             className={`flex items-center gap-3 rounded-xl border-l-4 px-4 py-3 ${
               urgent ? "border-l-destructive bg-destructive/10" : "border-l-amber-500 bg-amber-500/10"
-            }`}
+            } ${onOpen ? "cursor-pointer hover:brightness-110" : ""}`}
           >
             {urgent ? (
               <AlertTriangle className="size-5 shrink-0 text-destructive" />

@@ -1,4 +1,5 @@
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { SearchableSelect } from "@/components/searchable-select";
 import { SubscriptionAlerts } from "@/components/subscription-alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { propertyApi } from "@/lib/api";
+import { propertyApi, type ApiSubscriptionHistory } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { resources, type FieldDef, type Row } from "@/lib/mock-data";
 import { formatMoney, useCollection } from "@/lib/store";
@@ -66,8 +67,12 @@ function SubscriptionDays({ endsAt }: { endsAt: unknown }) {
 
 
 
-function renderCell(field: FieldDef, value: unknown, resolveRef?: (id: unknown) => string | null) {
-if (field.key === "subscriptionEndsAt") return <SubscriptionDays endsAt={value} />;
+function renderCell(
+  field: FieldDef,
+  value: unknown,
+  resolveRef?: (id: unknown, row?: Row) => string | null,
+  row?: Row,
+) {if (field.key === "subscriptionEndsAt") return <SubscriptionDays endsAt={value} />;
 
   if (value === undefined || value === null || value === "") {
     return <span className="text-muted-foreground">—</span>;
@@ -77,7 +82,7 @@ if (field.key === "subscriptionEndsAt") return <SubscriptionDays endsAt={value} 
   }
   if (field.type === "date") return String(value).slice(0, 10);
   if (field.type === "money") return formatMoney(value);
-  if (field.type === "entity-select") return resolveRef?.(value) ?? String(value);
+  if (field.type === "entity-select") return resolveRef?.(value, row) ?? String(value);
   if (field.badge) return <Badge variant={statusVariant(String(value))}>{String(value)}</Badge>;
   return String(value);
 }
@@ -85,7 +90,7 @@ if (field.key === "subscriptionEndsAt") return <SubscriptionDays endsAt={value} 
 function emptyValues(fields: FieldDef[]) {
   const values: Record<string, string> = {};
   fields.forEach((f) => {
-    values[f.key] = "";
+        values[f.key] = f.defaultValue ?? "";
   });
   return values;
 }
@@ -97,12 +102,14 @@ export function ResourcePage({
   onPrefillConsumed,
   fixedParentId,
   fixedOwnerId,
+  backOwnerId,
 }: {
   resource: string;
   prefillValues?: Record<string, string> | null;
   onPrefillConsumed?: () => void;
   fixedParentId?: string | undefined;
   fixedOwnerId?: string | undefined;
+  backOwnerId?: string | undefined;
 }) {
   const def = resources[resource]!;
   const [query, setQuery] = useState("");
@@ -191,12 +198,30 @@ const canEditRow = (row: Row) =>
   const [open, setOpen] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [newPlanId, setNewPlanId] = useState("");
+      const [history, setHistory] = useState<ApiSubscriptionHistory[]>([]);
+  const [extendDays, setExtendDays] = useState("");
+  const [discountPlanId, setDiscountPlanId] = useState("");
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+
+  const loadHistory = (propertyId: string) => {
+    propertyApi
+      .subscriptionHistory(propertyId)
+      .then((res) => setHistory(res.items))
+      .catch(() => setHistory([]));
+  };
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(def.fields));
   const [confirmDelete, setConfirmDelete] = useState<Row | null>(null);
-  const columns = def.fields.filter((f) => f.inTable);
+  const MANAGER_HIDDEN_KEYS = ["price", "subscriptionStatus", "subscriptionEndsAt"];
+  const columns = def.fields
+    .filter((f) => f.inTable)
+    .filter((f) => !(role === "manager" && MANAGER_HIDDEN_KEYS.includes(f.key)));
 
-  const refLabel = (id: unknown) => {
+   const refLabel = (id: unknown, row?: Row) => {
     if (!refField || !id) return null;
+    if (resource === "properties" && refField.key === "ownerId" && row?.["ownerName"]) {
+      return String(row["ownerName"]);
+    }
     const match = refRows.find((r) => r.id === id);
     return match ? String(match[refField.labelKey ?? "name"] ?? id) : String(id);
   };
@@ -230,6 +255,14 @@ const canEditRow = (row: Row) =>
     setEditing(row);
     setValues(next);
     setOpen(true);
+        setHistory([]);
+    setExtendDays("");
+    setDiscountPlanId("");
+    setDiscountAmount("");
+    setAdjustNote("");
+    if (resource === "properties" && (role === "superAdmin" || role === "owner")) {
+      loadHistory(row.id);
+    }
   };
 
   const submit = async () => {
@@ -310,7 +343,11 @@ const canEditRow = (row: Row) =>
       />
            {fixedParentId ? (
         <div className="mb-4 flex items-center gap-3 text-sm">
-          <Link to="/floors" className="text-muted-foreground hover:text-foreground">
+                   <Link
+            to="/floors"
+            search={{ ownerId: backOwnerId }}
+            className="text-muted-foreground hover:text-foreground"
+          >
             ← All properties
           </Link>
           <span className="font-medium">{refLabel(fixedParentId)}</span>
@@ -414,8 +451,13 @@ const canEditRow = (row: Row) =>
         </div>
       ) : null}
       {resource === "properties" && (role === "owner" || role === "superAdmin") ? (
-               <SubscriptionAlerts rows={rows} canRenew={role === "superAdmin"} />
-      ) : null}
+        <SubscriptionAlerts
+          rows={rows}
+          canRenew={role === "superAdmin"}
+          onOpen={(r) => {
+            if (canEditRow(r)) openEdit(r);
+          }}
+        />      ) : null}
       {viewMode === "table" ? (
         <div className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity ${isFetching ? "opacity-60" : ""}`}>
           <div className="overflow-x-auto">
@@ -656,6 +698,127 @@ const canEditRow = (row: Row) =>
         </Button>
       </div>
     ) : null}
+        {role === "superAdmin" ? (
+      <div className="mt-3 space-y-3 border-t border-border pt-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Adjust
+        </p>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={365}
+            placeholder="Extend by days"
+            className="w-40"
+            value={extendDays}
+            onChange={(e) => setExtendDays(e.target.value)}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={!extendDays || Number(extendDays) < 1}
+            onClick={async () => {
+              try {
+                await propertyApi.adjustSubscription(editing.id, {
+                  action: "extend",
+                  days: Number(extendDays),
+                  ...(adjustNote ? { note: adjustNote } : {}),
+                });
+                toast.success("Subscription extended");
+                setExtendDays("");
+                loadHistory(editing.id);
+                void reset();
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Failed to extend");
+              }
+            }}
+          >
+            Extend
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={discountPlanId} onValueChange={setDiscountPlanId}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Discounted renewal plan…" />
+            </SelectTrigger>
+            <SelectContent>
+              {planRows
+                .filter((p) => p["billingCycle"] !== "trial")
+                .map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {String(p["name"])}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            min={1}
+            placeholder="Discount ৳"
+            className="w-32"
+            value={discountAmount}
+            onChange={(e) => setDiscountAmount(e.target.value)}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={!discountPlanId || !discountAmount || Number(discountAmount) <= 0}
+            onClick={async () => {
+              try {
+                await propertyApi.adjustSubscription(editing.id, {
+                  action: "discount",
+                  planId: discountPlanId,
+                  discountAmount: Number(discountAmount),
+                  ...(adjustNote ? { note: adjustNote } : {}),
+                });
+                toast.success("Discounted renewal applied");
+                setDiscountPlanId("");
+                setDiscountAmount("");
+                loadHistory(editing.id);
+                void reset();
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Failed to apply discount");
+              }
+            }}
+          >
+            Renew with discount
+          </Button>
+        </div>
+        <Input
+          placeholder="Note (optional)"
+          value={adjustNote}
+          onChange={(e) => setAdjustNote(e.target.value)}
+        />
+      </div>
+    ) : null}
+
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        History
+      </p>
+      {history.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No history yet.</p>
+      ) : (
+        <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
+          {history.map((h) => (
+            <li key={h.id} className="flex items-center justify-between gap-2">
+              <span>
+                <span className="font-medium">{h.action.replace("_", " ")}</span>
+                {h.daysAdded ? ` +${h.daysAdded}d` : ""}
+                {h.discountAmount ? ` (−৳${h.discountAmount})` : ""}
+                {h.note ? ` — ${h.note}` : ""}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {h.newEndsAt ? `→ ${String(h.newEndsAt).slice(0, 10)}` : ""} ·{" "}
+                {String(h.createdAt).slice(0, 10)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   </div>
 ) : null}
           
@@ -678,23 +841,26 @@ const canEditRow = (row: Row) =>
                     {f.label}
                     {f.required ? <span className="text-destructive"> *</span> : null}
                   </Label>
-                  {f.type === "entity-select" ? (
-                    <Select
+                                   {f.type === "entity-select" ? (
+                    <SearchableSelect
+                      id={`field-${f.key}`}
                       value={values[f.key] || ""}
                       onValueChange={(v) => setValues((prev) => ({ ...prev, [f.key]: v }))}
                       disabled={fieldLocked(f)}
-                    >
-                      <SelectTrigger id={`field-${f.key}`}>
-                        <SelectValue placeholder={`Select ${f.label.toLowerCase()}…`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(f.key === planField?.key ? planRows : refRows).map((row) => (
-                          <SelectItem key={row.id} value={row.id}>
-                            {String(row[f.labelKey ?? "name"] ?? row.id)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder={`Select ${f.label.toLowerCase()}…`}
+                      options={(f.key === planField?.key
+                        ? planRows
+                        : refRows.filter(
+                            (r) =>
+                              f.sourceResource !== "ownerAccounts" ||
+                              r["status"] === "active" ||
+                              r.id === values[f.key],
+                          )
+                      ).map((row) => ({
+                        value: row.id,
+                        label: String(row[f.labelKey ?? "name"] ?? row.id),
+                      }))}
+                    />
                   ) : f.type === "boolean" ? (
                     <Select
                       value={values[f.key] || ""}

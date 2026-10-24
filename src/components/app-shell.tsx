@@ -1,10 +1,17 @@
+import { CountBadge } from "@/components/count-badge";
+import { Button } from "@/components/ui/button";
+import type { ManagerPermissions } from "@/lib/api";
+import { displayName, initials, useAuth } from "@/lib/auth";
+import { usePendingRequests } from "@/lib/use-pending-requests";
+import { cn } from "@/lib/utils";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Building2,
   CarFront,
   ClipboardList,
-  CreditCard,
+
   FileQuestion,
+  FileText,
   Home,
   Layers,
   LayoutDashboard,
@@ -15,7 +22,7 @@ import {
   PhoneCall,
   PieChart,
   Receipt,
-  Settings,
+
   Shield,
   Sparkles,
   Users,
@@ -24,12 +31,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-
-import { CountBadge } from "@/components/count-badge";
-import { Button } from "@/components/ui/button";
-import { displayName, initials, useAuth } from "@/lib/auth";
-import { usePendingRequests } from "@/lib/use-pending-requests";
-import { cn } from "@/lib/utils";
 interface NavItem {
   to: string;
   label: string;
@@ -57,6 +58,7 @@ const managerNav: NavSection[] = [
       { to: "/expenses", label: "Expenses", icon: Wallet },
       { to: "/parking", label: "Parking", icon: CarFront },
       { to: "/tenants", label: "Tenants", icon: Users },
+            { to: "/leases", label: "Leases", icon: FileText },
       { to: "/maintenance", label: "Maintenance", icon: Wrench },
       { to: "/billing", label: "Rent & billing", icon: Receipt },
       { to: "/staff", label: "Staff", icon: ClipboardList },
@@ -67,7 +69,6 @@ const managerNav: NavSection[] = [
     group: "Insights",
     items: [
       { to: "/notices", label: "Notices", icon: Megaphone },
-      { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -91,6 +92,7 @@ const ownerNav: NavSection[] = [
       { to: "/expenses", label: "Expenses", icon: Wallet },
       { to: "/parking", label: "Parking", icon: CarFront },
       { to: "/tenants", label: "Tenants", icon: Users },
+      { to: "/leases", label: "Leases", icon: FileText },
       { to: "/maintenance", label: "Maintenance approvals", icon: Wrench },
       { to: "/billing", label: "Rent & billing", icon: Receipt },
       { to: "/staff", label: "Staff", icon: ClipboardList },
@@ -101,15 +103,13 @@ const ownerNav: NavSection[] = [
     group: "Ownership",
     items: [
       { to: "/flat-status", label: "Flat status", icon: Building2 },
-      { to: "/admin/admins", label: "Manage managers", icon: Shield },
-   { to: "/requests", label: "Requests", icon: FileQuestion },
+{ to: "/admin/admins", label: "Managers", icon: Shield },   { to: "/requests", label: "Requests", icon: FileQuestion },
     ],
   },
   {
     group: "Insights",
     items: [
       { to: "/notices", label: "Notices", icon: Megaphone },
-      { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -119,7 +119,7 @@ const superAdminConsoleNav: NavSection[] = [
     group: "Console",
     items: [
       { to: "/admin", label: "Overview", icon: LayoutDashboard },
-      { to: "/admin/admins", label: "Administrators", icon: Shield },
+      { to: "/admin/admins", label: "Users", icon: Shield },
     ],
   },
      {
@@ -130,12 +130,27 @@ const superAdminConsoleNav: NavSection[] = [
       { to: "/requests", label: "Requests", icon: FileQuestion },
       { to: "/floors", label: "Floors", icon: Layers },
       { to: "/units", label: "Units", icon: LayoutGrid },
-      { to: "/building-accounts", label: "Building accounts", icon: CreditCard },
       { to: "/subscriptions", label: "Subscription", icon: Sparkles },
       { to: "/notices", label: "Notices", icon: Megaphone },
     ],
   },
 ];
+const NAV_PERMISSION: Record<string, keyof ManagerPermissions> = {
+  "/billing": "rent",
+  "/leases": "rent",
+  "/expenses": "expenses",
+  "/maintenance": "maintenance",
+};
+// Pages that still run on localStorage demo data. Remove a path from this
+// set when its real backend ships (Batch 5).
+const DEMO_ONLY_PATHS = new Set([
+  "/parking",
+  "/staff",
+  "/emergency-contacts",
+  "/flat-status",
+  "/notices",
+]);
+
 
 export function AppShell({
   children,
@@ -152,8 +167,25 @@ export function AppShell({
   const role = session?.admin?.role;
   const isConsole = variant === "console" || role === "superAdmin";
 
-  const nav = isConsole ? superAdminConsoleNav : role === "owner" ? ownerNav : managerNav;
-  const pending = usePendingRequests();
+  const baseNav = isConsole ? superAdminConsoleNav : role === "owner" ? ownerNav : managerNav;
+  const perms = session?.admin?.permissions ?? null;
+    const permFiltered =
+    role === "manager" && !isConsole
+      ? baseNav.map((section) => ({
+          ...section,
+          items: section.items.filter((item) => {
+            const key = NAV_PERMISSION[item.to];
+            return !key || perms?.[key] === true;
+          }),
+        }))
+      : baseNav;
+  const nav = permFiltered
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !DEMO_ONLY_PATHS.has(item.to)),
+    }))
+    .filter((section) => section.items.length > 0);
+        const pending = usePendingRequests();
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
@@ -273,13 +305,9 @@ export function AppShell({
             {isConsole ? "Administration" : "Workspace"}
           </p>
           <div className="ml-auto flex items-center gap-2">
-            {isConsole ? (
+                      {isConsole ? (
               <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
                 Property workspace
-              </Link>
-            ) : role !== "manager" ? (
-              <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground">
-                Admin console
               </Link>
             ) : null}
           </div>

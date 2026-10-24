@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-
-import { adminApi, tokenStore, type ApiAdmin } from "./api";
+import { adminApi, tokenStore, tryRefreshAdminToken, type ApiAdmin } from "./api";
 
 type Session = { token: string; admin: ApiAdmin | null } | null;
 
@@ -43,21 +42,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (restoreRanRef.current) return;
     restoreRanRef.current = true;
 
-    async function restoreSession() {
-      const storedAdminRefreshToken =
-        typeof window !== "undefined" ? window.localStorage.getItem(ADMIN_REFRESH_KEY) : null;
-
-      if (storedAdminRefreshToken) {
-        try {
-       const result = await adminApi.refreshToken({ refreshToken: storedAdminRefreshToken });
-tokenStore.setAdmin(result.accessToken, result.refreshToken);
-          setAdmin({ token: result.accessToken, admin: readProfile(ADMIN_PROFILE_KEY) });
-        } catch {
-          window.localStorage.removeItem(ADMIN_REFRESH_KEY);
-          writeProfile(ADMIN_PROFILE_KEY, null);
+        async function restoreSession() {
+      const token = await tryRefreshAdminToken();
+           if (token) {
+        const cached = readProfile(ADMIN_PROFILE_KEY);
+        setAdmin({ token, admin: cached });
+        if (cached?.id) {
+          adminApi
+            .getAdmin(cached.id)
+            .then((fresh) => {
+              writeProfile(ADMIN_PROFILE_KEY, fresh);
+              setAdmin((prev) => (prev ? { ...prev, admin: fresh } : prev));
+            })
+            .catch(() => {
+              // keep the cached profile if the refetch fails
+            });
         }
+      } else if (!window.localStorage.getItem(ADMIN_REFRESH_KEY)) {
+        writeProfile(ADMIN_PROFILE_KEY, null);
       }
-
       setReady(true);
     }
 

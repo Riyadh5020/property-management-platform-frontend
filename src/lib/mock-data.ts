@@ -24,6 +24,7 @@ export interface FieldDef {
   createOnly?: boolean;
   section?: string;
   advanced?: boolean;
+    defaultValue?: string;
 
 }
 
@@ -63,67 +64,10 @@ export const resources: Record<string, ResourceDef> = {
     key: "properties",
     title: "Properties",
     singular: "Property",
-    description: "Properties on the platform — live backend, superAdmin-managed.",
+description: "Properties registered on the platform.",
     apiBacked: true,
     fields: [
-      // { key: "title", label: "Title / Building name", inTable: true, required: true },
-      // { key: "buildingNumber", label: "Building number" },
-      // {
-      //   key: "type",
-      //   label: "Type",
-      //   type: "select",
-      //   options: ["apartment", "house", "villa", "office", "shop", "land"],
-      //   inTable: true,
-      //   required: true,
-      // },
-      // {
-      //   key: "listingType",
-      //   label: "Listing type",
-      //   type: "select",
-      //   options: ["rent"],
-      //   inTable: true,
-      //   required: true,
-      // },
-      // { key: "price", label: "Subscription price", type: "money", inTable: true, tableOnly: true },      // { key: "currency", label: "Currency", type: "select", options: CURRENCY_OPTIONS },
-      // { key: "floors", label: "Floors", type: "number" },
-      // { key: "totalUnits", label: "Total units", type: "number" },
-      // { key: "totalArea", label: "Total area", type: "number" },
-      // { key: "address", label: "Address", inTable: true, required: true },
-      // { key: "city", label: "City", inTable: true, required: true },
-      // { key: "state", label: "State", ownerEditable: true },
-      // { key: "country", label: "Country", inTable: true, required: true },
-      // { key: "postalCode", label: "Postal code", ownerEditable: true },
-      // { key: "latitude", label: "Latitude", type: "number" },
-      // { key: "longitude", label: "Longitude", type: "number" },
-      // {
-      //   key: "status",
-      //   label: "Status",
-      //   type: "select",
-      //   options: ["draft", "active", "inactive", "rented"],
-      //   inTable: true,
-      //   badge: true,
-      // },
-      // {
-      //   key: "ownerId",
-      //   label: "Owner",
-      //   type: "entity-select",
-      //   sourceResource: "ownerAccounts",
-      //   labelKey: "displayLabel",
-      //   inTable: true,
-      //   required: true,
-      // },
-      //       {
-      //   key: "planId",
-      //   label: "Subscription plan",
-      //   type: "entity-select",
-      //   sourceResource: "subscriptions",
-      //   labelKey: "displayLabel",
-      //   required: true,
-      //   createOnly: true,
-      // },
-      // { key: "subscriptionStatus", label: "Subscription", inTable: true, tableOnly: true, badge: true },
-      // { key: "subscriptionEndsAt", label: "Ends", type: "date", inTable: true, tableOnly: true },
-      // { key: "description", label: "Description / note", type: "textarea", ownerEditable: true },
+   
       
       { key: "title", label: "Title / Building name", inTable: true, required: true, section: "Basics" },
       { key: "buildingNumber", label: "Building number", section: "Basics" },
@@ -200,9 +144,11 @@ export const resources: Record<string, ResourceDef> = {
     key: "floors",
     title: "Floors",
     singular: "Floor",
-    description: "Floors under a property — live backend, superAdmin-managed.",
+description: "Floors under a property.",
     apiBacked: true,
     fields: [
+
+   
       {
         key: "propertyId",
         label: "Property",
@@ -213,10 +159,17 @@ export const resources: Record<string, ResourceDef> = {
         required: true,
       },
   { key: "floorNumber", label: "Floor number", type: "number", inTable: true, required: true },
-{ key: "name", label: "Floor name" },
+  {
+  key: "floorType",
+  label: "Floor type",
+  type: "select",
+  options: ["residential", "commercial", "basement", "parking", "rooftop", "ground"],
+  inTable: true,
+},
+{ key: "name", label: "Floor name", required: true },
 { key: "totalUnits", label: "Total units", type: "number", inTable: true },
 { key: "totalArea", label: "Total area (sqft)", type: "number", inTable: true },
-{ key: "areaUnit", label: "Area unit", placeholder: "sqft" },
+{ key: "areaUnit", label: "Area unit", required: true, defaultValue: "sqft" },
 {
   key: "status",
   label: "Status",
@@ -600,7 +553,7 @@ export const resources: Record<string, ResourceDef> = {
     key: "subscriptions",
     title: "Subscription",
     singular: "Plan",
-    description: "Subscription plans — live backend, superAdmin-managed.",
+description: "Subscription plans.",
     apiBacked: true,
     fields: [
       { key: "name", label: "Plan", inTable: true, required: true },
@@ -614,6 +567,10 @@ export const resources: Record<string, ResourceDef> = {
       },
       { key: "amount", label: "Amount", type: "money", inTable: true, required: true },
       { key: "durationDays", label: "Duration (days)", type: "number", inTable: true, tableOnly: true },
+      { key: "maxProperties", label: "Max properties", type: "number", inTable: true, placeholder: "Blank = unlimited" },
+      { key: "maxFloors", label: "Max floors / property", type: "number", inTable: true, placeholder: "Blank = unlimited" },
+      { key: "maxManagers", label: "Max managers", type: "number", inTable: true, placeholder: "Blank = unlimited" },
+
       {
         key: "status",
         label: "Status",

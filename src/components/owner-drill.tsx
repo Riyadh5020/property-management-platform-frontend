@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { propertyApi, type ApiProperty } from "@/lib/api";
+import { adminApi, propertyApi, type ApiProperty } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Search } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
@@ -46,10 +46,24 @@ export function OwnerDrill({
     queryKey: ["owner-drill-properties"],
     queryFn: () => propertyApi.list({ limit: 200 }),
   });
+
+    const { data: ownerData, isLoading: ownersLoading } = useQuery({
+    queryKey: ["owner-drill-owners"],
+    queryFn: () => adminApi.listAdminsPaged({ role: "owner", status: "active", limit: 200 }),
+  });
   const items = data?.items;
 
   const groups = useMemo(() => {
-    const map = new Map<string, OwnerGroup>();
+        const map = new Map<string, OwnerGroup>();
+    for (const o of ownerData?.items ?? []) {
+      map.set(o.id, {
+        ownerId: o.id,
+        name: [o.firstName, o.lastName].filter(Boolean).join(" ") || "—",
+        email: o.email,
+        properties: [],
+        floors: 0,
+      });
+    }
     for (const p of items ?? []) {
       const g = map.get(p.ownerId) ?? {
         ownerId: p.ownerId,
@@ -63,8 +77,7 @@ export function OwnerDrill({
       map.set(p.ownerId, g);
     }
     return [...map.values()];
-  }, [items]);
-
+  }, [items, ownerData]);
   const q = search.trim().toLowerCase();
   const selected = ownerId ? groups.find((g) => g.ownerId === ownerId) : undefined;
 
@@ -165,8 +178,7 @@ export function OwnerDrill({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableRow>
+{isLoading || ownersLoading ? (                <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                     Loading…
                   </TableCell>

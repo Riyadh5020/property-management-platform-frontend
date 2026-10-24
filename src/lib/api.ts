@@ -9,9 +9,8 @@ const ADMIN_REFRESH_KEY = "pms.adminRefreshToken";
 const isBrowser = () => typeof window !== "undefined";
 
 let inMemoryAdminToken: string | null = null;
-
 export function getApiBaseUrl(): string {
-  if (!isBrowser()) return DEFAULT_BASE_URL;
+  if (!isBrowser() || import.meta.env.PROD) return DEFAULT_BASE_URL;
   return window.localStorage.getItem(BASE_URL_KEY) || DEFAULT_BASE_URL;
 }
 
@@ -94,8 +93,7 @@ export interface RequestOptions {
 
 let refreshInFlight: Promise<string | null> | null = null;
 
-async function tryRefreshAdminToken(): Promise<string | null> {
-  if (!isBrowser()) return null;
+export async function tryRefreshAdminToken(): Promise<string | null> {  if (!isBrowser()) return null;
   const storedRefreshToken = window.localStorage.getItem(ADMIN_REFRESH_KEY);
   if (!storedRefreshToken) return null;
 
@@ -108,8 +106,11 @@ async function tryRefreshAdminToken(): Promise<string | null> {
         });
         tokenStore.setAdmin(result.accessToken, result.refreshToken);
         return result.accessToken;
-      } catch {
-        tokenStore.setAdmin(null, null);
+            } catch (err) {
+        // only drop the session if the server actually rejected the token
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          tokenStore.setAdmin(null, null);
+        }
         return null;
       } finally {
         refreshInFlight = null;
@@ -126,7 +127,14 @@ export async function apiRequest<T = unknown>(
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
-
+  if (
+    auth === "admin" &&
+    !tokenStore.admin &&
+    isBrowser() &&
+    window.localStorage.getItem(ADMIN_REFRESH_KEY)
+  ) {
+    await tryRefreshAdminToken();
+  }
   const token = auth === "admin" ? tokenStore.admin : null;
   if (auth !== "none" && token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -187,7 +195,7 @@ if (!response.ok) {
       .filter((e) => e.msg);
     if (parsed.length > 0) {
       technicalMessage = parsed.map((e) => (e.path ? `${e.path}: ${e.msg}` : e.msg)).join("; ");
-      message = parsed.map((e) => humanizeIssue(e.path, e.msg)).join(" ");
+      message = parsed.map((e) => humanizeIssue(e.path, e.msg).replace(/\.$/, "")).join("; ") + ".";
     }
 } else if (response.status === 401 && auth === "admin") {
       message = "You're not signed in, or your session has expired. Please log in again.";
@@ -217,6 +225,14 @@ if (!response.ok) {
 
 export type AccountStatus = "active" | "inactive" | "suspended" | "pending";
 export type AdminRole = "superAdmin" | "owner" | "manager";
+export interface ManagerPermissions {
+  tenants: boolean;
+  rent: boolean;
+  expenses: boolean;
+  maintenance: boolean;
+}
+
+
 
 export interface ApiAdmin {
   id: string;
@@ -227,6 +243,10 @@ export interface ApiAdmin {
   profileImageUrl?: string;
   status?: AccountStatus;
   role?: AdminRole;
+    ownerId?: string | null;
+      permissions?: ManagerPermissions | null;
+      propertyCount?: number;
+     ownerName?: string | null;   
   createdAt?: string;
 }
 
@@ -265,21 +285,45 @@ export const adminApi = {
   resetPassword: (body: { email: string; code: string; newPassword: string }) =>
     apiRequest<null>("/admins/reset-password", { method: "POST", body }),
   listAdmins: () => apiRequest<unknown>("/admins", { auth: "admin" }).then(toList<ApiAdmin>),
-
+  listAdminsPaged: (
+    params: ListParams & { role?: AdminRole; status?: AccountStatus } = {},
+  ) =>
+    apiRequest<unknown>(`/admins${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiAdmin>(res),
+    ),
   createAdmin: (body: {
     firstName: string;
     lastName: string;
     email: string;
     password: string;
+    phoneNumber?: string | null;
     role: AdminRole;
+    ownerId?: string | null;
+    permissions?: ManagerPermissions | null;
   }) => apiRequest<ApiAdmin>("/admins/create", { method: "POST", body, auth: "admin" }),
   getAdmin: (id: string) => apiRequest<ApiAdmin>(`/admins/${id}`, { auth: "admin" }),
    updateAdmin: (
     id: string,
-    body: { firstName: string; lastName: string; email: string; role?: AdminRole },
+    body: { firstName: string; lastName: string; email: string; phoneNumber?: string | null; role?: AdminRole; permissions?: ManagerPermissions | null },
   ) => apiRequest<ApiAdmin>(`/admins/${id}`, { method: "PUT", body, auth: "admin" }),
-  updateAdminStatus: (id: string, status: AccountStatus) =>
+    updateAdminStatus: (id: string, status: AccountStatus) =>
     apiRequest<ApiAdmin>(`/admins/${id}/status`, { method: "PATCH", body: { status }, auth: "admin" }),
+  getManagerProperties: (id: string) =>
+    apiRequest<{ propertyIds: string[] }>(`/admins/${id}/properties`, { auth: "admin" }),
+   setManagerProperties: (id: string, propertyIds: string[]) =>
+    apiRequest<{ propertyIds: string[] }>(`/admins/${id}/properties`, {
+      method: "PUT",
+      body: { propertyIds },
+      auth: "admin",
+    }),
+
+  resetUserPassword: (id: string, newPassword: string) =>
+    apiRequest<null>(`/admins/${id}/reset-password`, {
+      method: "POST",
+      body: { newPassword },
+      auth: "admin",
+    }),
+
 };
 
 /* ------------------------------------------------------------------ */
@@ -292,7 +336,7 @@ export type PropertyListingType = "rent";
 
 export type FloorStatus = "draft" | "active" | "inactive" | "maintenance";
 
-export type UnitType = "apartment" | "office" | "shop" | "parking" | "common";
+export type UnitType = "apartment" | "shop" | "office" | "parking" | "bachelor" | "own_use" | "common";
 export type UnitStatus = "vacant" | "occupied" | "reserved" | "maintenance";
 
 export interface ApiProperty {
@@ -361,7 +405,7 @@ export interface ApiProperty {
 //   createdAt?: string;
 //   updatedAt?: string;
 // }
-
+export type FloorType = "residential" | "commercial" | "basement" | "parking" | "rooftop" | "ground";
 export interface ApiFloor {
   id: string;
   propertyId: string;
@@ -373,6 +417,7 @@ export interface ApiFloor {
   description?: string | null;
   amenities?: Record<string, unknown> | null;
   status: FloorStatus;
+    floorType?: FloorType | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -427,8 +472,24 @@ function toListResult<T>(payload: unknown): ListResult<T> {
   return { items, total };
 }
 
+export interface ApiSubscriptionHistory {
+  id: string;
+  propertyId: string;
+  planId: string | null;
+  previousPlanId: string | null;
+  action: "create" | "renew" | "change_plan" | "extend" | "discount" | "trial";
+  previousEndsAt: string | null;
+  newEndsAt: string | null;
+  daysAdded: number | null;
+  amount: number | null;
+  discountAmount: number | null;
+  note: string | null;
+  createdBy: string | null;
+  createdAt: string;
+}
+
 export const propertyApi = {
-  list: (params: ListParams & { status?: string; type?: string; listingType?: string; ownerId?: string } = {}) =>    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) =>
+  list: (params: ListParams & { status?: string; type?: string; listingType?: string; ownerId?: string ,} = {}) =>    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) =>
       toListResult<ApiProperty>(res),
     ),
   get: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { auth: "admin" }),
@@ -443,6 +504,21 @@ remove: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { method: "
       body: { planId },
       auth: "admin",
     }),
+      subscriptionHistory: (id: string) =>
+    apiRequest<unknown>(`/properties/${id}/subscription-history?limit=50`, { auth: "admin" }).then((res) =>
+      toListResult<ApiSubscriptionHistory>(res),
+    ),
+  adjustSubscription: (
+    id: string,
+    body:
+      | { action: "extend"; days: number; note?: string }
+      | { action: "discount"; planId: string; discountAmount: number; note?: string },
+  ) =>
+    apiRequest<ApiProperty>(`/properties/${id}/subscription/adjust`, {
+      method: "PATCH",
+      body,
+      auth: "admin",
+    }),
 };
 
 export const floorApi = {
@@ -454,6 +530,12 @@ export const floorApi = {
   update: (id: string, body: Partial<ApiFloor>) =>
     apiRequest<ApiFloor>(`/floors/${id}`, { method: "PUT", body, auth: "admin" }),
   remove: (id: string) => apiRequest<ApiFloor>(`/floors/${id}`, { method: "DELETE", auth: "admin" }),
+    copyLayout: (targetFloorId: string, sourceFloorId: string) =>
+    apiRequest<{ items: ApiUnit[]; areaWarning?: string }>(`/floors/${targetFloorId}/copy-layout`, {
+      method: "POST",
+      body: { sourceFloorId },
+      auth: "admin",
+    }),
 };
 
 export const unitApi = {
@@ -465,13 +547,19 @@ export const unitApi = {
   update: (id: string, body: Partial<ApiUnit>) =>
     apiRequest<ApiUnit>(`/units/${id}`, { method: "PUT", body, auth: "admin" }),
   remove: (id: string) => apiRequest<ApiUnit>(`/units/${id}`, { method: "DELETE", auth: "admin" }),
+    bulkCreate: (body: { floorId: string; units: Partial<ApiUnit>[] }) =>
+    apiRequest<{ items: ApiUnit[]; areaWarning?: string }>("/units/bulk", {
+      method: "POST",
+      body,
+      auth: "admin",
+    }),
 };
 
 /* ------------------------------------------------------------------ */
 /* Property Requests                                                   */
 /* ------------------------------------------------------------------ */
 
-export type PropertyRequestStatus = "pending" | "approved" | "denied";
+export type PropertyRequestStatus = "pending" | "approved" | "denied"| "cancelled";
 
 export interface ApiPropertyRequest {
   id: string;
@@ -490,7 +578,9 @@ export interface ApiPropertyRequest {
   state?: string | null;
   country?: string | null;
   postalCode?: string | null;
+    type?: PropertyType | null;
   status: PropertyRequestStatus;
+  rejectReason?: string | null;
   reviewedBy?: string | null;
   reviewedAt?: string | null;
   consumedAt?: string | null;
@@ -514,6 +604,7 @@ export const propertyRequestApi = {
     state: string;
     country: string;
     postalCode?: string | null;
+    type?: PropertyType;
   }) =>
     apiRequest<ApiPropertyRequest>("/property-requests/create", {
       method: "POST",
@@ -526,13 +617,21 @@ export const propertyRequestApi = {
       body: { planId },
       auth: "admin",
     }),
-  deny: (id: string) =>
+    deny: (id: string, reason: string) =>
     apiRequest<ApiPropertyRequest>(`/property-requests/${id}/deny`, {
+      method: "PATCH",
+      body: { reason },
+      auth: "admin",
+    }),
+  cancel: (id: string) =>
+    apiRequest<ApiPropertyRequest>(`/property-requests/${id}/cancel`, {
       method: "PATCH",
       auth: "admin",
     }),
+  edit: (id: string, body: Partial<Omit<ApiPropertyRequest, "id" | "status">>) =>
+    apiRequest<ApiPropertyRequest>(`/property-requests/${id}`, { method: "PUT", body, auth: "admin" }),
 };
-export type FloorRequestStatus = "pending" | "approved" | "denied";
+export type FloorRequestStatus = "pending" | "approved" | "denied"| "cancelled";
 
 export interface ApiFloorRequest {
   id: string;
@@ -542,6 +641,7 @@ export interface ApiFloorRequest {
   ownerEmail?: string | null;
     floorCount?: number;
   requestedFloorCount: number;
+  rejectReason?: string | null;
   note: string;
   status: FloorRequestStatus;
   reviewedBy?: string | null;
@@ -570,11 +670,19 @@ export const floorRequestApi = {
       auth: "admin",
     }),
 
-  deny: (id: string) =>
+   deny: (id: string, reason: string) =>
     apiRequest<ApiFloorRequest>(`/floor-requests/${id}/deny`, {
+      method: "PATCH",
+      body: { reason },
+      auth: "admin",
+    }),
+  cancel: (id: string) =>
+    apiRequest<ApiFloorRequest>(`/floor-requests/${id}/cancel`, {
       method: "PATCH",
       auth: "admin",
     }),
+  edit: (id: string, body: { requestedFloorCount?: number; note?: string }) =>
+    apiRequest<ApiFloorRequest>(`/floor-requests/${id}`, { method: "PUT", body, auth: "admin" }),
 };
 
 
@@ -593,6 +701,9 @@ export interface ApiSubscriptionPlan {
   billingCycle: BillingCycle;
   amount: number | string; // pg returns NUMERIC as a string, e.g. "4900.00"
   durationDays: number;
+    maxProperties?: number | null;
+  maxFloors?: number | null;
+  maxManagers?: number | null;
   status: SubscriptionPlanStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -604,10 +715,287 @@ export const subscriptionPlanApi = {
       toListResult<ApiSubscriptionPlan>(res),
     ),
   get: (id: string) => apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, { auth: "admin" }),
-  create: (body: { name: string; billingCycle: BillingCycle; amount: number; status?: SubscriptionPlanStatus }) =>
+  create: (body: { name: string; billingCycle: BillingCycle; amount: number; status?: SubscriptionPlanStatus; maxProperties?: number | null; maxFloors?: number | null; maxManagers?: number | null }) =>
     apiRequest<ApiSubscriptionPlan>("/subscription-plans/create", { method: "POST", body, auth: "admin" }),
-  update: (id: string, body: Partial<Pick<ApiSubscriptionPlan, "name" | "billingCycle" | "status">> & { amount?: number }) =>
-    apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, { method: "PUT", body, auth: "admin" }),
+  update: (
+    id: string,
+    body: Partial<
+      Pick<
+        ApiSubscriptionPlan,
+        "name" | "billingCycle" | "status" | "maxProperties" | "maxFloors" | "maxManagers"
+      >
+    > & { amount?: number },
+  ) =>
+    apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, {
+      method: "PUT",
+      body,
+      auth: "admin",
+    }),
   remove: (id: string) =>
     apiRequest<ApiSubscriptionPlan>(`/subscription-plans/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+/* ------------------------------------------------------------------ */
+/* Dashboard                                                           */
+/* ------------------------------------------------------------------ */
+
+export interface ApiDashboardStats {
+  totals: { properties: number; floors: number; units: number; managers: number };
+  unitsByStatus: { status: string; count: number }[];
+  expiringSubscriptions: {
+    id: string;
+    title: string;
+    subscriptionEndsAt: string;
+    planName: string | null;
+    daysLeft: number;
+  }[];
+  pendingRequests: { property: number; floor: number } | null;
+}
+
+export const dashboardApi = {
+  stats: () => apiRequest<ApiDashboardStats>("/dashboard/stats", { auth: "admin" }),
+};
+
+export interface ApiReportProperty {
+  id: string;
+  title: string;
+  floors: number;
+  units: number;
+  occupied: number;
+  vacant: number;
+  reserved: number;
+  maintenance: number;
+  rentRoll: number;
+  occupiedRent: number;
+}
+
+export const reportApi = {
+  stats: () => apiRequest<{ properties: ApiReportProperty[] }>("/dashboard/reports", { auth: "admin" }),
+};/* ------------------------------------------------------------------ */
+/* Tenants                                                             */
+/* ------------------------------------------------------------------ */
+
+export type TenantStatus = "active" | "notice_served" | "moved_out";
+export type TenantRole = "primary" | "co_tenant";
+export type IdDocType = "nid" | "passport" | "driving_licence";
+
+export interface ApiTenant {
+  id: string;
+  propertyId: string;
+  unitId: string | null;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  idDocType: IdDocType | null;
+  idDocNumber: string | null;
+  role: TenantRole;
+  moveInDate: string | null;
+  moveOutDate: string | null;
+  status: TenantStatus;
+  propertyTitle?: string | null;
+  unitCode?: string | null;
+  createdAt?: string;
+}
+
+export const tenantApi = {
+  list: (params: ListParams & { status?: string; propertyId?: string; unitId?: string } = {}) =>
+    apiRequest<unknown>(`/tenants${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiTenant>(res),
+    ),
+  create: (body: Record<string, unknown>) =>
+    apiRequest<ApiTenant>("/tenants/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Record<string, unknown>) =>
+    apiRequest<ApiTenant>(`/tenants/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) => apiRequest<ApiTenant>(`/tenants/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+/* ------------------------------------------------------------------ */
+/* Leases                                                              */
+/* ------------------------------------------------------------------ */
+
+export type LeaseStatus = "draft" | "active" | "expired" | "terminated";
+
+export interface ApiLease {
+  id: string;
+  propertyId: string;
+  unitId: string;
+  tenantId: string;
+  agreementNo: string | null;
+  startDate: string;
+  endDate: string;
+  monthlyRent: number;
+  securityDeposit: number;
+  escalationPercent: number;
+  noticePeriodDays: number;
+  status: LeaseStatus;
+  propertyTitle?: string | null;
+  unitCode?: string | null;
+  tenantName?: string | null;
+}
+
+export const leaseApi = {
+  list: (params: ListParams & { status?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/leases${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiLease>(res),
+    ),
+  create: (body: Record<string, unknown>) =>
+    apiRequest<ApiLease>("/leases/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Record<string, unknown>) =>
+    apiRequest<ApiLease>(`/leases/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) => apiRequest<ApiLease>(`/leases/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+/* ------------------------------------------------------------------ */
+/* Invoices & payments                                                 */
+/* ------------------------------------------------------------------ */
+
+export type InvoiceStatus = "unpaid" | "partial" | "paid" | "void";
+export type PaymentMethod = "cash" | "bank" | "bkash" | "nagad" | "other";
+
+export interface ApiInvoice {
+  id: string;
+  propertyId: string;
+  unitId: string;
+  tenantId: string;
+  leaseId: string;
+  invoiceNo: string;
+  billingMonth: string;
+  dueDate: string;
+  rentAmount: number;
+  utilitiesAmount: number;
+  penaltyAmount: number;
+  otherAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  status: InvoiceStatus;
+  note: string | null;
+  propertyTitle?: string | null;
+  unitCode?: string | null;
+  tenantName?: string | null;
+  isOverdue?: boolean;
+}
+
+export interface ApiPayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  method: PaymentMethod;
+  reference: string | null;
+  paidOn: string;
+  reversesPaymentId: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export const invoiceApi = {
+  list: (params: ListParams & { status?: string; month?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/invoices${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiInvoice>(res),
+    ),
+  get: (id: string) =>
+    apiRequest<{ invoice: ApiInvoice; payments: ApiPayment[] }>(`/invoices/${id}`, { auth: "admin" }),
+  generate: (body: { month: string; propertyId?: string; dueDay?: number }) =>
+    apiRequest<{ created: number; skipped: number }>("/invoices/generate", {
+      method: "POST",
+      body,
+      auth: "admin",
+    }),
+  update: (
+    id: string,
+    body: { utilitiesAmount?: number; penaltyAmount?: number; otherAmount?: number; dueDate?: string; note?: string | null },
+  ) => apiRequest<ApiInvoice>(`/invoices/${id}`, { method: "PUT", body, auth: "admin" }),
+  addPayment: (
+    id: string,
+    body: { amount: number; method: PaymentMethod; paidOn: string; reference?: string | null; note?: string | null },
+  ) =>
+    apiRequest<{ invoice: ApiInvoice; payment: ApiPayment }>(`/invoices/${id}/payments`, {
+      method: "POST",
+      body,
+      auth: "admin",
+    }),
+  reverse: (id: string, paymentId: string, note: string) =>
+    apiRequest<{ invoice: ApiInvoice; payment: ApiPayment }>(
+      `/invoices/${id}/payments/${paymentId}/reverse`,
+      { method: "POST", body: { note }, auth: "admin" },
+    ),
+  void: (id: string) => apiRequest<ApiInvoice>(`/invoices/${id}/void`, { method: "PATCH", auth: "admin" }),
+};
+
+/* ------------------------------------------------------------------ */
+/* Maintenance                                                         */
+/* ------------------------------------------------------------------ */
+
+export type MaintenancePriority = "low" | "medium" | "high" | "urgent";
+export type MaintenanceStatus = "open" | "in_progress" | "completed" | "cancelled";
+export type MaintenanceCategory = "tenant_request" | "preventive" | "common_area";
+
+export interface ApiMaintenance {
+  id: string;
+  propertyId: string;
+  unitId: string | null;
+  title: string;
+  description: string | null;
+  category: MaintenanceCategory;
+  priority: MaintenancePriority;
+  status: MaintenanceStatus;
+  assignee: string | null;
+  scheduledFor: string | null;
+  completedOn: string | null;
+  cost: number;
+  propertyTitle?: string | null;
+  unitCode?: string | null;
+}
+
+export const maintenanceApi = {
+  list: (params: ListParams & { status?: string; priority?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/maintenance${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiMaintenance>(res),
+    ),
+  create: (body: Record<string, unknown>) =>
+    apiRequest<ApiMaintenance>("/maintenance/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Record<string, unknown>) =>
+    apiRequest<ApiMaintenance>(`/maintenance/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) =>
+    apiRequest<ApiMaintenance>(`/maintenance/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+/* ------------------------------------------------------------------ */
+/* Expenses                                                            */
+/* ------------------------------------------------------------------ */
+
+export type ExpenseCategory = "utilities" | "maintenance" | "salary" | "supplies" | "tax" | "other";
+export type ExpenseStatus = "paid" | "pending";
+
+export interface ApiExpense {
+  id: string;
+  propertyId: string;
+  title: string;
+  category: ExpenseCategory;
+  amount: number;
+  expenseDate: string;
+  paidBy: string | null;
+  status: ExpenseStatus;
+  notes: string | null;
+  propertyTitle?: string | null;
+}
+
+export const expenseApi = {
+  list: (
+    params: ListParams & {
+      status?: string; category?: string; propertyId?: string; from?: string; to?: string;
+    } = {},
+  ) =>
+    apiRequest<unknown>(`/expenses${toQuery(params)}`, { auth: "admin" }).then((res) => {
+      const list = toListResult<ApiExpense>(res);
+      const summary =
+        res && typeof res === "object"
+          ? ((res as Record<string, unknown>)["summary"] as { totalAmount?: number } | undefined)
+          : undefined;
+      return { ...list, totalAmount: Number(summary?.totalAmount ?? 0) };
+    }),
+  create: (body: Record<string, unknown>) =>
+    apiRequest<ApiExpense>("/expenses/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Record<string, unknown>) =>
+    apiRequest<ApiExpense>(`/expenses/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) => apiRequest<ApiExpense>(`/expenses/${id}`, { method: "DELETE", auth: "admin" }),
 };

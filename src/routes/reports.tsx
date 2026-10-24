@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -14,7 +15,9 @@ import {
 } from "recharts";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
-import { formatMoney, useCollection } from "@/lib/store";
+import { reportApi, type ApiReportProperty } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { formatMoney } from "@/lib/store";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -22,17 +25,16 @@ export const Route = createFileRoute("/reports")({
       { title: "Reports & Analytics — EstateOps" },
       {
         name: "description",
-        content:
-          "Occupancy rate, rent collection, vacancy, maintenance cost and revenue per building.",
+        content: "Occupancy, vacancy and rent roll per property.",
       },
       { property: "og:title", content: "Reports & Analytics — EstateOps" },
-      { property: "og:description", content: "Portfolio performance analytics per building." },
+      { property: "og:description", content: "Portfolio performance analytics per property." },
     ],
   }),
   component: ReportsPage,
 });
 
-const COLORS = ["#10b981", "#38bdf8", "#f59e0b", "#f43f5e", "#a78bfa"];
+const COLORS = ["#10b981", "#38bdf8", "#f59e0b", "#f43f5e"];
 
 function ChartCard({
   title,
@@ -57,39 +59,40 @@ function ChartCard({
 }
 
 function ReportsPage() {
-  const buildings = useCollection("buildings");
-  const units = useCollection("units");
-  const invoices = useCollection("invoices");
-  const maintenance = useCollection("maintenance");
+  const { admin, ready } = useAuth();
+  const [rows, setRows] = useState<ApiReportProperty[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const perBuilding = buildings.rows.map((b) => {
-    const name = String(b["name"]);
-    const bUnits = units.rows.filter((u) => u["building"] === name);
-    const occupied = bUnits.filter((u) => u["status"] === "Occupied").length;
-    const revenue = bUnits.reduce((sum, u) => sum + Number(u["rent"] ?? 0), 0);
-    const cost = maintenance.rows
-      .filter((m) => m["building"] === name)
-      .reduce((sum, m) => sum + Number(m["cost"] ?? 0), 0);
-    return {
-      name,
-      occupancy: bUnits.length ? Math.round((occupied / bUnits.length) * 100) : 0,
-      vacant: bUnits.length - occupied,
-      revenue,
-      cost,
-    };
-  });
+  useEffect(() => {
+    if (!ready || !admin?.token) return;
+    reportApi
+      .stats()
+      .then((res) => setRows(res.properties))
+      .catch((err) => setError(err instanceof Error ? err.message : "Could not load reports"));
+  }, [ready, admin?.token]);
 
-  const statusBreakdown = ["Occupied", "Vacant", "Reserved", "Under maintenance"].map((status) => ({
-    name: status,
-    value: units.rows.filter((u) => u["status"] === status).length,
+  const properties = rows ?? [];
+  const perProperty = properties.map((p) => ({
+    name: p.title,
+    occupancy: p.units ? Math.round((p.occupied / p.units) * 100) : 0,
+    notOccupied: p.units - p.occupied,
+    rentRoll: p.rentRoll,
+    occupiedRent: p.occupiedRent,
   }));
 
-  const billed = invoices.rows.reduce(
-    (sum, i) =>
-      sum + Number(i["rent"] ?? 0) + Number(i["utilities"] ?? 0) + Number(i["penalty"] ?? 0),
-    0,
-  );
-  const collected = invoices.rows.reduce((sum, i) => sum + Number(i["paid"] ?? 0), 0);
+  const sum = (k: "occupied" | "vacant" | "reserved" | "maintenance" | "units") =>
+    properties.reduce((s, p) => s + p[k], 0);
+  const statusBreakdown = [
+    { name: "Occupied", value: sum("occupied") },
+    { name: "Vacant", value: sum("vacant") },
+    { name: "Reserved", value: sum("reserved") },
+    { name: "Maintenance", value: sum("maintenance") },
+  ].filter((s) => s.value > 0);
+
+  const totalRentRoll = properties.reduce((s, p) => s + p.rentRoll, 0);
+  const totalOccupiedRent = properties.reduce((s, p) => s + p.occupiedRent, 0);
+  const totalUnits = sum("units");
+  const overallOccupancy = totalUnits ? Math.round((sum("occupied") / totalUnits) * 100) : 0;
 
   const tooltipStyle = {
     background: "oklch(0.26 0.03 258)",
@@ -103,81 +106,110 @@ function ReportsPage() {
     <AppShell>
       <PageHeader
         title="Reports & analytics"
-        description="Occupancy, collections, vacancy and maintenance cost across the portfolio."
+        description="Occupancy, vacancy and rent roll across your properties."
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Rent billed</p>
-          <p className="mt-2 text-2xl font-semibold">{formatMoney(billed)}</p>
+      {error ? (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          {error}
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Rent collected</p>
-          <p className="mt-2 text-2xl font-semibold text-primary">{formatMoney(collected)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Collection rate</p>
-          <p className="mt-2 text-2xl font-semibold">
-            {billed ? Math.round((collected / billed) * 100) : 0}%
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="Revenue per building" subtitle="Contracted monthly rent roll">
-          <BarChart data={perBuilding}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Bar dataKey="revenue" fill="#10b981" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ChartCard>
-
-        <ChartCard title="Unit status mix" subtitle="Across all buildings">
-          <PieChart>
-            <Pie data={statusBreakdown} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90}>
-              {statusBreakdown.map((entry, index) => (
-                <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
-            <Tooltip contentStyle={tooltipStyle} />
-          </PieChart>
-        </ChartCard>
-
-        <ChartCard title="Occupancy rate per building" subtitle="Percentage of occupied units">
-          <BarChart data={perBuilding}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Bar dataKey="occupancy" fill="#38bdf8" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ChartCard>
-
-        <ChartCard title="Maintenance cost per building" subtitle="Work order spend to date">
-          <BarChart data={perBuilding}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Bar dataKey="cost" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ChartCard>
-      </div>
-
-      <div className="mt-6 rounded-xl border border-border bg-card p-5">
-        <h2 className="mb-3 font-semibold">Vacancy report</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {perBuilding.map((b) => (
-            <div key={b.name} className="rounded-lg border border-border px-4 py-3">
-              <p className="text-sm font-medium">{b.name}</p>
-              <p className="text-xs text-muted-foreground">{b.vacant} unit(s) not occupied</p>
+      ) : rows === null ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <>
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Monthly rent roll</p>
+              <p className="mt-2 text-2xl font-semibold">{formatMoney(totalRentRoll)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Sum of unit rents</p>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Rent from occupied units</p>
+              <p className="mt-2 text-2xl font-semibold text-primary">
+                {formatMoney(totalOccupiedRent)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Occupancy</p>
+              <p className="mt-2 text-2xl font-semibold">{overallOccupancy}%</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {sum("occupied")} of {totalUnits} units
+              </p>
+            </div>
+          </div>
+
+          {properties.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No properties to report on yet.</p>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ChartCard title="Rent roll per property" subtitle="Total monthly rent of all units">
+                <BarChart data={perProperty}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="rentRoll" fill="#10b981" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartCard>
+
+              <ChartCard title="Unit status mix" subtitle="Across all properties">
+                <PieChart>
+                  <Pie
+                    data={statusBreakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={90}
+                  >
+                    {statusBreakdown.map((entry, index) => (
+                      <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                </PieChart>
+              </ChartCard>
+
+              <ChartCard title="Occupancy per property" subtitle="Percentage of occupied units">
+                <BarChart data={perProperty}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="occupancy" fill="#38bdf8" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartCard>
+
+              <ChartCard title="Units not occupied" subtitle="Vacant, reserved and under maintenance">
+                <BarChart data={perProperty}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="notOccupied" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartCard>
+            </div>
+          )}
+
+          <div className="mt-6 rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-3 font-semibold">Vacancy report</h2>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {properties.map((p) => (
+                <div key={p.id} className="rounded-lg border border-border px-4 py-3">
+                  <p className="text-sm font-medium">{p.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {p.vacant} vacant · {p.reserved} reserved · {p.maintenance} in maintenance
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {p.floors} floors · {p.units} units
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </AppShell>
   );
 }

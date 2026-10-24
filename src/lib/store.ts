@@ -75,6 +75,10 @@ function planLabel(name: string, amount: number, durationDays: number) {
   return `${name} — ${price} (${durationDays} days)`;
 }
 
+// Blank limit field = null = unlimited.
+const limitVal = (x: unknown): number | null =>
+  x === undefined || x === null || x === "" ? null : Number(x);
+
 const apiAdapters: Record<string, ApiAdapter> = {
   properties: {
     list: (params) =>
@@ -116,10 +120,16 @@ const apiAdapters: Record<string, ApiAdapter> = {
         billingCycle: BillingCycle;
         amount: number;
         status?: SubscriptionPlanStatus;
+        maxProperties?: number | null;
+        maxFloors?: number | null;
+        maxManagers?: number | null;
       } = {
         name: String(v["name"] ?? ""),
         billingCycle: v["billingCycle"] as BillingCycle,
         amount: Number(v["amount"] ?? 0),
+        maxProperties: limitVal(v["maxProperties"]),
+        maxFloors: limitVal(v["maxFloors"]),
+        maxManagers: limitVal(v["maxManagers"]),
       };
 
       if (v["status"]) body.status = v["status"] as SubscriptionPlanStatus;
@@ -132,12 +142,18 @@ const apiAdapters: Record<string, ApiAdapter> = {
         billingCycle?: BillingCycle;
         amount?: number;
         status?: SubscriptionPlanStatus;
+        maxProperties?: number | null;
+        maxFloors?: number | null;
+        maxManagers?: number | null;
       } = {};
 
       if (v["name"] !== undefined) body.name = String(v["name"]);
       if (v["billingCycle"] !== undefined) body.billingCycle = v["billingCycle"] as BillingCycle;
       if (v["amount"] !== undefined) body.amount = Number(v["amount"]);
       if (v["status"] !== undefined) body.status = v["status"] as SubscriptionPlanStatus;
+      if ("maxProperties" in v) body.maxProperties = limitVal(v["maxProperties"]);
+      if ("maxFloors" in v) body.maxFloors = limitVal(v["maxFloors"]);
+      if ("maxManagers" in v) body.maxManagers = limitVal(v["maxManagers"]);
 
       return subscriptionPlanApi.update(id, body) as unknown as Promise<Record<string, unknown>>;
     },
@@ -145,23 +161,21 @@ const apiAdapters: Record<string, ApiAdapter> = {
   },
   ownerAccounts: {
     list: () =>
-      adminApi.listAdmins().then((list) => {
-        const items = list
-          .filter((a) => a.role === "owner")
-          .map((a) => ({
-            ...a,
-            displayLabel: `${[a.firstName, a.lastName].filter(Boolean).join(" ") || "Unnamed"} — ${a.email}`,
-          })) as unknown as Record<string, unknown>[];
-        return { items, total: items.length };
+      adminApi.listAdminsPaged({ role: "owner", limit: 200 }).then((res) => {
+        const items = res.items.map((a) => ({
+          ...a,
+          displayLabel: `${[a.firstName, a.lastName].filter(Boolean).join(" ") || "Unnamed"} — ${a.email}`,
+        })) as unknown as Record<string, unknown>[];
+        return { items, total: res.total };
       }),
     create: async () => {
-      throw new Error("Owner accounts are managed from Administrators, not here.");
+      throw new Error("Owner accounts are managed from the Users page, not here.");
     },
     update: async () => {
-      throw new Error("Owner accounts are managed from Administrators, not here.");
+      throw new Error("Owner accounts are managed from the Users page, not here.");
     },
     remove: async () => {
-      throw new Error("Owner accounts are managed from Administrators, not here.");
+      throw new Error("Owner accounts are managed from the Users page, not here.");
     },
   },
 };

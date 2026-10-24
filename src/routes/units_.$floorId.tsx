@@ -1,11 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, LayoutGrid, List, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Layers, LayoutGrid, List, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,7 +26,6 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { floorApi, unitApi, type ApiFloor, type ApiUnit, type UnitStatus, type UnitType } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-
 export const Route = createFileRoute("/units_/$floorId")({
   component: FloorUnitsPage,
 });
@@ -76,15 +83,32 @@ function FloorUnitsPage() {
   const { floorId } = Route.useParams();
   const { admin } = useAuth();
   const role = admin?.admin?.role;
+  const canEditCap = role === "owner" || role === "superAdmin";
 
   const [floor, setFloor] = useState<ApiFloor | null>(null);
   const [rows, setRows] = useState<DraftUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [capDraft, setCapDraft] = useState("");
+  const [editingCap, setEditingCap] = useState(false);
   const [savingCap, setSavingCap] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "card">("card");
-
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulk, setBulk] = useState({
+    prefix: "",
+    start: "1",
+    count: "",
+    unitType: "apartment" as UnitType,
+    areaSize: "",
+    rent: "",
+    bedrooms: "",
+    bathrooms: "",
+  });
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [siblingFloors, setSiblingFloors] = useState<ApiFloor[]>([]);
+  const [sourceFloorId, setSourceFloorId] = useState("");
+  const [copying, setCopying] = useState(false);
   const load = async () => {
     setLoading(true);
     try {
@@ -117,12 +141,18 @@ function FloorUnitsPage() {
       toast.error("Enter a whole number greater than 0");
       return;
     }
+    const savedCount = rows.filter((r) => r.id).length;
+    if (n < savedCount) {
+      toast.error(`This floor already has ${savedCount} units. The cap cannot be lower.`);
+      return;
+    }
     setSavingCap(true);
     try {
       const updated = await floorApi.update(floorId, { totalUnits: n });
       setFloor(updated);
       setCapDraft("");
-      toast.success("Unit cap set");
+      setEditingCap(false);
+      toast.success("Unit cap saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not set unit cap");
     } finally {
@@ -204,6 +234,69 @@ function FloorUnitsPage() {
     }
   };
 
+    const bulkPreview = (() => {
+    const n = Number(bulk.count);
+    const s = Number(bulk.start);
+    if (!Number.isInteger(n) || n <= 0 || !Number.isInteger(s)) return [] as string[];
+    return Array.from({ length: Math.min(n, 100) }, (_, i) => `${bulk.prefix}${s + i}`);
+  })();
+
+  const submitBulk = async () => {
+    const area = Number(bulk.areaSize);
+    if (bulkPreview.length === 0) return toast.error("Enter a count greater than 0");
+    if (!area || area <= 0) return toast.error("Area size must be greater than 0");
+    setBulkSaving(true);
+    try {
+      const res = await unitApi.bulkCreate({
+        floorId,
+        units: bulkPreview.map((unitCode) => ({
+          unitCode,
+          unitType: bulk.unitType,
+          areaSize: area,
+          bedrooms: bulk.bedrooms === "" ? null : Number(bulk.bedrooms),
+          bathrooms: bulk.bathrooms === "" ? null : Number(bulk.bathrooms),
+          rent: bulk.rent === "" ? null : Number(bulk.rent),
+        })),
+      });
+      toast.success(`${res.items.length} units created`);
+      if (res.areaWarning) toast.warning(res.areaWarning);
+      setBulkOpen(false);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Bulk create failed");
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const openCopy = async () => {
+    setSourceFloorId("");
+    setCopyOpen(true);
+    try {
+      if (!floor) return;
+      const res = await floorApi.list({ propertyId: floor.propertyId, limit: 200 });
+      setSiblingFloors(res.items.filter((f) => f.id !== floorId));
+    } catch {
+      toast.error("Could not load floors");
+    }
+  };
+
+  const submitCopy = async () => {
+    if (!sourceFloorId) return toast.error("Choose a floor to copy from");
+    setCopying(true);
+    try {
+      const res = await floorApi.copyLayout(floorId, sourceFloorId);
+      toast.success(`${res.items.length} units copied`);
+      if (res.areaWarning) toast.warning(res.areaWarning);
+      setCopyOpen(false);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Copy failed");
+    } finally {
+      setCopying(false);
+    }
+  };
+
   const NewBadge = () => (
     <span className="rounded border border-primary/30 bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
       New
@@ -226,7 +319,7 @@ function FloorUnitsPage() {
     <AppShell>
       <div className="mb-2">
         <Button asChild variant="ghost" size="sm">
-          <Link to="/floors">
+          <Link to="/floors" search={floor ? { propertyId: floor.propertyId } : {}}>
             <ArrowLeft className="size-4" /> Back to floors
           </Link>
         </Button>
@@ -262,6 +355,30 @@ function FloorUnitsPage() {
                 <List className="size-4" />
               </Button>
             </div>
+            {capIsSet && canEditCap ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setCapDraft(String(cap));
+                  setEditingCap(true);
+                }}
+              >
+                Change cap
+              </Button>
+            ) : null}
+
+            {canEditCap && capIsSet ? (
+              <>
+                <Button size="sm" variant="secondary" onClick={() => void openCopy()} disabled={atCap}>
+                  <Copy className="size-4" /> Copy layout
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setBulkOpen(true)} disabled={atCap}>
+                  <Layers className="size-4" /> Bulk add
+                </Button>
+              </>
+            ) : null}
+
             <Button size="sm" onClick={addRow} disabled={!canAdd}>
               <Plus className="size-4" /> Add unit
             </Button>
@@ -269,9 +386,13 @@ function FloorUnitsPage() {
         }
       />
 
-      {!loading && !capIsSet ? (
+      {!loading && canEditCap && (!capIsSet || editingCap) ? (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
-          <span className="text-muted-foreground">Set how many units this floor can hold before anyone can add units.</span>
+          <span className="text-muted-foreground">
+            {capIsSet
+              ? "Change how many units this floor can hold."
+              : "Set how many units this floor can hold before anyone can add units."}
+          </span>
           <Input
             type="number"
             min={1}
@@ -283,6 +404,11 @@ function FloorUnitsPage() {
           <Button size="sm" onClick={() => void saveCap()} disabled={savingCap}>
             Save cap
           </Button>
+          {editingCap ? (
+            <Button size="sm" variant="ghost" onClick={() => setEditingCap(false)}>
+              Cancel
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -303,7 +429,7 @@ function FloorUnitsPage() {
                   <Input
                     value={row.unitCode}
                     onChange={(e) => updateRow(index, { unitCode: e.target.value })}
-                    placeholder="Unit code, e.g. A1"
+                    placeholder="Unit code *"
                     className="h-8 w-28 font-medium"
                   />
                   {!row.id ? <NewBadge /> : null}
@@ -321,10 +447,9 @@ function FloorUnitsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {["apartment", "office", "shop", "parking", "common"].map((t) => (
+                      {["apartment", "shop", "office", "parking", "bachelor", "own_use", "common"].map((t) => (
                         <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
+   {t.replace("_", " ")}                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -339,7 +464,7 @@ function FloorUnitsPage() {
                     <SelectContent>
                       {["vacant", "occupied", "reserved", "maintenance"].map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+    {s.replace("_", " ")}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -347,7 +472,9 @@ function FloorUnitsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Area (sqft)</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    Area (sqft) <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     type="number"
                     value={row.areaSize}
@@ -447,9 +574,9 @@ function FloorUnitsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Unit code</TableHead>
+                  <TableHead>Unit code *</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Area (sqft)</TableHead>
+                  <TableHead>Area (sqft) *</TableHead>
                   <TableHead>Bedrooms</TableHead>
                   <TableHead>Bathrooms</TableHead>
                   <TableHead>Kitchen</TableHead>
@@ -476,9 +603,9 @@ function FloorUnitsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {["apartment", "office", "shop", "parking", "common"].map((t) => (
+                          {["apartment", "shop", "office", "parking", "bachelor", "own_use", "common"].map((t) => (
                             <SelectItem key={t} value={t}>
-                              {t}
+    {t.replace("_", " ")}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -599,6 +726,98 @@ function FloorUnitsPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk add units</DialogTitle>
+            <DialogDescription>
+              {capIsSet ? `Room for ${Math.max(0, (cap ?? 0) - rows.length)} more on this floor.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Code prefix</Label>
+              <Input value={bulk.prefix} placeholder="A" onChange={(e) => setBulk({ ...bulk, prefix: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Start number</Label>
+              <Input type="number" value={bulk.start} onChange={(e) => setBulk({ ...bulk, start: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">How many *</Label>
+              <Input type="number" value={bulk.count} onChange={(e) => setBulk({ ...bulk, count: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Type</Label>
+              <Select value={bulk.unitType} onValueChange={(v) => setBulk({ ...bulk, unitType: v as UnitType })}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["apartment", "shop", "office", "parking", "bachelor", "own_use", "common"].map((t) => (
+                    <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Area (sqft) *</Label>
+              <Input type="number" value={bulk.areaSize} onChange={(e) => setBulk({ ...bulk, areaSize: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Rent</Label>
+              <Input type="number" value={bulk.rent} onChange={(e) => setBulk({ ...bulk, rent: e.target.value })} />
+            </div>
+            {!notApplicable(bulk.unitType) ? (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Bedrooms</Label>
+                  <Input type="number" value={bulk.bedrooms} onChange={(e) => setBulk({ ...bulk, bedrooms: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Bathrooms</Label>
+                  <Input type="number" value={bulk.bathrooms} onChange={(e) => setBulk({ ...bulk, bathrooms: e.target.value })} />
+                </div>
+              </>
+            ) : null}
+          </div>
+          {bulkPreview.length > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Will create: {bulkPreview.slice(0, 6).join(", ")}
+              {bulkPreview.length > 6 ? ` … ${bulkPreview[bulkPreview.length - 1]}` : ""} ({bulkPreview.length} units)
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setBulkOpen(false)}>Cancel</Button>
+            <Button onClick={() => void submitBulk()} disabled={bulkSaving}>Create units</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={copyOpen} onOpenChange={setCopyOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Copy layout from another floor</DialogTitle>
+            <DialogDescription>
+              Copies every unit (same codes, type, area, rooms) as vacant. Nothing is copied if any code already exists here or the cap would be exceeded.
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={sourceFloorId} onValueChange={setSourceFloorId}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Choose source floor…" /></SelectTrigger>
+            <SelectContent>
+              {siblingFloors.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  Floor {f.floorNumber}{f.name ? ` (${f.name})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setCopyOpen(false)}>Cancel</Button>
+            <Button onClick={() => void submitCopy()} disabled={copying || !sourceFloorId}>Copy units</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </AppShell>
   );
 }
