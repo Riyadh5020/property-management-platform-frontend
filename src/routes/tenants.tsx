@@ -92,6 +92,8 @@ type Form = typeof emptyForm;
 
 function TenantsPage() {
   const { admin, ready } = useAuth();
+  // Managers may add and correct records but not delete them (the API enforces this too).
+  const canDelete = admin?.admin?.role !== "manager";
   const [tenants, setTenants] = useState<ApiTenant[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -389,14 +391,16 @@ function TenantsPage() {
                         >
                           <Pencil className="size-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Delete"
-                          onClick={() => setDeleting(t)}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
+                        {canDelete ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Delete"
+                            onClick={() => setDeleting(t)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>

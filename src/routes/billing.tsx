@@ -63,6 +63,8 @@ function statusBadge(inv: ApiInvoice) {
 
 function BillingPage() {
   const { admin, ready } = useAuth();
+  // Managers may add and correct records but not delete them (the API enforces this too).
+  const canDelete = admin?.admin?.role !== "manager";
   const [invoices, setInvoices] = useState<ApiInvoice[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -521,7 +523,7 @@ function BillingPage() {
                 )}
               </div>
 
-              {editable && active.paidAmount === 0 ? (
+              {editable && canDelete && active.paidAmount === 0 ? (
                 <Button variant="destructive" size="sm" disabled={busy} onClick={() => void voidInvoice()}>
                   Void invoice
                 </Button>
