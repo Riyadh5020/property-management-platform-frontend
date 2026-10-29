@@ -58,7 +58,8 @@ const managerNav: NavSection[] = [
       { to: "/expenses", label: "Expenses", icon: Wallet },
       { to: "/parking", label: "Parking", icon: CarFront },
       { to: "/tenants", label: "Tenants", icon: Users },
-            { to: "/leases", label: "Leases", icon: FileText },
+      { to: "/flat-status", label: "Flat status", icon: Building2 },
+      { to: "/leases", label: "Leases", icon: FileText },
       { to: "/maintenance", label: "Maintenance", icon: Wrench },
       { to: "/billing", label: "Rent & billing", icon: Receipt },
       { to: "/staff", label: "Staff", icon: ClipboardList },
@@ -140,14 +141,13 @@ const NAV_PERMISSION: Record<string, keyof ManagerPermissions> = {
   "/leases": "rent",
   "/expenses": "expenses",
   "/maintenance": "maintenance",
+  "/parking": "rent",
 };
 // Pages that still run on localStorage demo data. Remove a path from this
 // set when its real backend ships (Batch 5).
 const DEMO_ONLY_PATHS = new Set([
-  "/parking",
   "/staff",
   "/emergency-contacts",
-  "/flat-status",
   "/notices",
 ]);
 

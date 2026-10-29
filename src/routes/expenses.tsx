@@ -43,6 +43,8 @@ type Form = typeof emptyForm;
 
 function ExpensesPage() {
   const { admin, ready } = useAuth();
+  // Managers may add and correct records but not delete them (the API enforces this too).
+  const canDelete = admin?.admin?.role !== "manager";
   const [items, setItems] = useState<ApiExpense[]>([]);
   const [total, setTotal] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -242,9 +244,16 @@ function ExpensesPage() {
                         <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => openEdit(e)}>
                           <Pencil className="size-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => setDeleting(e)}>
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
+                        {canDelete ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Delete"
+                            onClick={() => setDeleting(e)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>

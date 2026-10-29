@@ -928,6 +928,7 @@ export const invoiceApi = {
 export type MaintenancePriority = "low" | "medium" | "high" | "urgent";
 export type MaintenanceStatus = "open" | "in_progress" | "completed" | "cancelled";
 export type MaintenanceCategory = "tenant_request" | "preventive" | "common_area";
+export type MaintenanceApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface ApiMaintenance {
   id: string;
@@ -942,12 +943,23 @@ export interface ApiMaintenance {
   scheduledFor: string | null;
   completedOn: string | null;
   cost: number;
+  approvalStatus: MaintenanceApprovalStatus;
+  ownerNote: string | null;
+  reviewedAt: string | null;
+  expenseId: string | null;
   propertyTitle?: string | null;
   unitCode?: string | null;
 }
 
 export const maintenanceApi = {
-  list: (params: ListParams & { status?: string; priority?: string; propertyId?: string } = {}) =>
+  list: (
+    params: ListParams & {
+      status?: string;
+      priority?: string;
+      approvalStatus?: string;
+      propertyId?: string;
+    } = {},
+  ) =>
     apiRequest<unknown>(`/maintenance${toQuery(params)}`, { auth: "admin" }).then((res) =>
       toListResult<ApiMaintenance>(res),
     ),
@@ -957,6 +969,13 @@ export const maintenanceApi = {
     apiRequest<ApiMaintenance>(`/maintenance/${id}`, { method: "PUT", body, auth: "admin" }),
   remove: (id: string) =>
     apiRequest<ApiMaintenance>(`/maintenance/${id}`, { method: "DELETE", auth: "admin" }),
+  // Owner/superAdmin approves or rejects a manager's request (a note is required to reject).
+  review: (id: string, body: Record<string, unknown>) =>
+    apiRequest<ApiMaintenance>(`/maintenance/${id}/review`, {
+      method: "PATCH",
+      body,
+      auth: "admin",
+    }),
 };
 
 /* ------------------------------------------------------------------ */
@@ -998,4 +1017,66 @@ export const expenseApi = {
   update: (id: string, body: Record<string, unknown>) =>
     apiRequest<ApiExpense>(`/expenses/${id}`, { method: "PUT", body, auth: "admin" }),
   remove: (id: string) => apiRequest<ApiExpense>(`/expenses/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+/* ------------------------------------------------------------------ */
+/* Parking                                                             */
+/* ------------------------------------------------------------------ */
+
+export type ParkingType = "resident" | "visitor" | "staff";
+export type ParkingStatus = "free" | "assigned" | "blocked";
+
+export interface ApiParking {
+  id: string;
+  propertyId: string;
+  slotNumber: string;
+  slotType: ParkingType;
+  unitId: string | null;
+  vehicleNumber: string | null;
+  monthlyFee: number;
+  status: ParkingStatus;
+  propertyTitle?: string | null;
+  unitCode?: string | null;
+}
+
+export const parkingApi = {
+  list: (params: ListParams & { status?: string; slotType?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/parking${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiParking>(res),
+    ),
+  create: (body: Record<string, unknown>) =>
+    apiRequest<ApiParking>("/parking/create", { method: "POST", body, auth: "admin" }),
+  update: (id: string, body: Record<string, unknown>) =>
+    apiRequest<ApiParking>(`/parking/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (id: string) =>
+    apiRequest<ApiParking>(`/parking/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+// flat status API for dashboard and reports
+export interface ApiFlat {
+  unitId: string;
+  unitCode: string;
+  floorNumber: number;
+  propertyId: string;
+  propertyTitle: string;
+  occupancy: "occupied" | "reserved" | "maintenance" | "vacant";
+  tenantName: string | null;
+  leaseEnd: string | null;
+  openMaintenance: number | null;
+  overdueInvoices: number | null;
+}
+
+// Fields the backend withheld because the manager lacks the matching permission (sent as null).
+export type FlatRestrictedField = "tenantName" | "leaseEnd" | "overdueInvoices" | "openMaintenance";
+
+export const flatStatusApi = {
+  list: (params: ListParams & { occupancy?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/flat-status${toQuery(params)}`, { auth: "admin" }).then((res) => {
+      const restricted =
+        res && typeof res === "object" ? (res as Record<string, unknown>)["restrictedFields"] : [];
+      return {
+        ...toListResult<ApiFlat>(res),
+        restrictedFields: (Array.isArray(restricted) ? restricted : []) as FlatRestrictedField[],
+      };
+    }),
 };
