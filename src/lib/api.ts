@@ -369,6 +369,7 @@ export interface ApiProperty {
   floorCount?: number | null;
 
   planId?: string | null;
+  planName?: string | null;
   subscriptionStartsAt?: string | null;
   subscriptionEndsAt?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
@@ -489,7 +490,7 @@ export interface ApiSubscriptionHistory {
 }
 
 export const propertyApi = {
-  list: (params: ListParams & { status?: string; type?: string; listingType?: string; ownerId?: string ,} = {}) =>    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) =>
+  list: (params: ListParams & { status?: string; type?: string; listingType?: string; ownerId?: string; subscription?: string } = {}) =>    apiRequest<unknown>(`/properties${toQuery(params)}`, { auth: "admin" }).then((res) =>
       toListResult<ApiProperty>(res),
     ),
   get: (id: string) => apiRequest<ApiProperty>(`/properties/${id}`, { auth: "admin" }),
@@ -1079,4 +1080,30 @@ export const flatStatusApi = {
         restrictedFields: (Array.isArray(restricted) ? restricted : []) as FlatRestrictedField[],
       };
     }),
+};
+
+// Activity log (owner: own properties; superAdmin: everything). Read-only history of changes.
+export interface ApiAuditLog {
+  id: string;
+  actorId: string | null;
+  actorRole: string | null;
+  actorName: string | null;
+  actorEmail: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  propertyId: string | null;
+  propertyTitle: string | null;
+  summary: string;
+  changes: Record<string, { from: unknown; to: unknown }> | null;
+  createdAt: string;
+}
+
+export const auditLogApi = {
+  list: (
+    params: ListParams & { entityType?: string; propertyId?: string; actorId?: string } = {},
+  ) =>
+    apiRequest<unknown>(`/audit-logs${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiAuditLog>(res),
+    ),
 };
