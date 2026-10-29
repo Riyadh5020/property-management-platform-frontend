@@ -7,10 +7,12 @@ import { cn } from "@/lib/utils";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Building2,
+  CalendarClock,
   CarFront,
   ClipboardList,
 
   FileQuestion,
+  History,
   FileText,
   Home,
   Layers,
@@ -105,6 +107,7 @@ const ownerNav: NavSection[] = [
     items: [
       { to: "/flat-status", label: "Flat status", icon: Building2 },
 { to: "/admin/admins", label: "Managers", icon: Shield },   { to: "/requests", label: "Requests", icon: FileQuestion },
+      { to: "/activity", label: "Activity log", icon: History },
     ],
   },
   {
@@ -121,6 +124,7 @@ const superAdminConsoleNav: NavSection[] = [
     items: [
       { to: "/admin", label: "Overview", icon: LayoutDashboard },
       { to: "/admin/admins", label: "Users", icon: Shield },
+      { to: "/activity", label: "Activity log", icon: History },
     ],
   },
      {
@@ -132,11 +136,13 @@ const superAdminConsoleNav: NavSection[] = [
       { to: "/floors", label: "Floors", icon: Layers },
       { to: "/units", label: "Units", icon: LayoutGrid },
       { to: "/subscriptions", label: "Subscription", icon: Sparkles },
+      { to: "/subscription-status", label: "Subscription status", icon: CalendarClock },
       { to: "/notices", label: "Notices", icon: Megaphone },
     ],
   },
 ];
 const NAV_PERMISSION: Record<string, keyof ManagerPermissions> = {
+  "/tenants": "tenants",
   "/billing": "rent",
   "/leases": "rent",
   "/expenses": "expenses",

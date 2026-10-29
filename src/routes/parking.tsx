@@ -88,6 +88,7 @@ function ParkingPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -102,6 +103,7 @@ function ParkingPage() {
   const [form, setForm] = useState<Form>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<ApiParking | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 400);
@@ -113,6 +115,7 @@ function ParkingPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await parkingApi.list({
         limit: PAGE_SIZE,
@@ -124,7 +127,7 @@ function ParkingPage() {
       setItems(res.items);
       setTotal(res.total);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load parking");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -199,6 +202,16 @@ function ParkingPage() {
     setUnits([]);
     setOpen(true);
     void loadFloors(s.propertyId);
+    // Preload the slot's floor and units so the current unit shows in the dialog.
+    if (s.unitId) {
+      unitApi
+        .get(s.unitId)
+        .then((u) => {
+          setForm((f) => (f.unitId === s.unitId ? { ...f, floorId: u.floorId } : f));
+          void loadUnits(u.floorId);
+        })
+        .catch(() => undefined);
+    }
   };
 
   const save = async () => {
@@ -238,14 +251,19 @@ function ParkingPage() {
   };
 
   const confirmDelete = async () => {
-    if (!deleting) return;
+    if (!deleting || removing) return;
+    setRemoving(true);
     try {
       await parkingApi.remove(deleting.id);
       toast.success("Slot deleted");
       setDeleting(null);
-      await load();
+      // Deleting the only row on a later page steps back instead of showing an empty page.
+      if (items.length === 1 && page > 0) setPage((p) => p - 1);
+      else await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete slot");
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -324,6 +342,20 @@ function ParkingPage() {
                 <TableRow>
                   <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                     Loading…
+                  </TableCell>
+                </TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center">
+                    <p className="text-destructive">Could not load parking slots: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
@@ -554,8 +586,8 @@ function ParkingPage() {
             <Button variant="secondary" onClick={() => setDeleting(null)}>
               Back
             </Button>
-            <Button variant="destructive" onClick={() => void confirmDelete()}>
-              Delete
+            <Button variant="destructive" disabled={removing} onClick={() => void confirmDelete()}>
+              {removing ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

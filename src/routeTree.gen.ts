@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AmenitiesRouteImport } from './routes/amenities'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -27,6 +28,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
+import { Route as SubscriptionStatusRouteImport } from './routes/subscription-status'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as TenantsRouteImport } from './routes/tenants'
 import { Route as UnitsRouteImport } from './routes/units'
@@ -42,6 +44,11 @@ import { Route as UnitsFloorIdRouteImport } from './routes/units_.$floorId'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AmenitiesRoute = AmenitiesRouteImport.update({
@@ -129,6 +136,11 @@ const StaffRoute = StaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscriptionStatusRoute = SubscriptionStatusRouteImport.update({
+  id: '/subscription-status',
+  path: '/subscription-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubscriptionsRoute = SubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
@@ -187,6 +199,7 @@ const UnitsFloorIdRoute = UnitsFloorIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
@@ -204,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
@@ -218,6 +232,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
@@ -235,6 +250,7 @@ export interface FileRoutesByTo {
   '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
@@ -250,6 +266,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
@@ -267,6 +284,7 @@ export interface FileRoutesById {
   '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
   '/units': typeof UnitsRoute
@@ -283,6 +301,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activity'
     | '/amenities'
     | '/billing'
     | '/dashboard'
@@ -300,6 +319,7 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/staff'
+    | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
     | '/units'
@@ -314,6 +334,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activity'
     | '/amenities'
     | '/billing'
     | '/dashboard'
@@ -331,6 +352,7 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/staff'
+    | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
     | '/units'
@@ -345,6 +367,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/activity'
     | '/amenities'
     | '/billing'
     | '/dashboard'
@@ -362,6 +385,7 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/staff'
+    | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
     | '/units'
@@ -377,6 +401,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivityRoute: typeof ActivityRoute
   AmenitiesRoute: typeof AmenitiesRoute
   BillingRoute: typeof BillingRoute
   DashboardRoute: typeof DashboardRoute
@@ -394,6 +419,7 @@ export interface RootRouteChildren {
   RequestsRoute: typeof RequestsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
+  SubscriptionStatusRoute: typeof SubscriptionStatusRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
   TenantsRoute: typeof TenantsRoute
   UnitsRoute: typeof UnitsRoute
@@ -414,6 +440,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/amenities': {
@@ -535,6 +568,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscription-status': {
+      id: '/subscription-status'
+      path: '/subscription-status'
+      fullPath: '/subscription-status'
+      preLoaderRoute: typeof SubscriptionStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/subscriptions': {
       id: '/subscriptions'
       path: '/subscriptions'
@@ -617,6 +657,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivityRoute: ActivityRoute,
   AmenitiesRoute: AmenitiesRoute,
   BillingRoute: BillingRoute,
   DashboardRoute: DashboardRoute,
@@ -634,6 +675,7 @@ const rootRouteChildren: RootRouteChildren = {
   RequestsRoute: RequestsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
+  SubscriptionStatusRoute: SubscriptionStatusRoute,
   SubscriptionsRoute: SubscriptionsRoute,
   TenantsRoute: TenantsRoute,
   UnitsRoute: UnitsRoute,

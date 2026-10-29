@@ -105,6 +105,7 @@ function AdminAdminsPage() {
     admin: ApiAdmin;
     status: AccountStatus;
   } | null>(null);
+  const [confirmRoleChange, setConfirmRoleChange] = useState(false);
 
   const auth = useAuth();
   const actingRole = auth.admin?.admin?.role;
@@ -191,9 +192,19 @@ function AdminAdminsPage() {
     setOpen(true);
   };
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const submit = async (event?: React.FormEvent, roleChangeConfirmed = false) => {
+    event?.preventDefault();
     if (saving) return;
+    // A role change alters what the user can see and do, so ask before saving it.
+    if (
+      editing &&
+      actingRole === "superAdmin" &&
+      form.role !== editing.role &&
+      !roleChangeConfirmed
+    ) {
+      setConfirmRoleChange(true);
+      return;
+    }
     setSaving(true);
     try {
           if (editing) {
@@ -646,6 +657,33 @@ function AdminAdminsPage() {
               }}
             >
               Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmRoleChange} onOpenChange={(o) => !o && setConfirmRoleChange(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change role to {form.role}?</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? `${editing.email} is currently ${editing.role ?? "manager"}. Their access changes as soon as you save.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmRoleChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmRoleChange(false);
+                void submit(undefined, true);
+              }}
+            >
+              Change role
             </Button>
           </DialogFooter>
         </DialogContent>

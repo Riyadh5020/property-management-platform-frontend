@@ -51,6 +51,7 @@ function FlatStatusPage() {
   const [restricted, setRestricted] = useState<FlatRestrictedField[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [occ, setOcc] = useState("all");
@@ -65,6 +66,7 @@ function FlatStatusPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await flatStatusApi.list({
         limit: PAGE_SIZE,
@@ -76,7 +78,7 @@ function FlatStatusPage() {
       setTotal(res.total);
       setRestricted(res.restrictedFields);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load flat status");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -152,6 +154,20 @@ function FlatStatusPage() {
                     className="py-10 text-center text-muted-foreground"
                   >
                     Loading…
+                  </TableCell>
+                </TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={columnCount} className="py-10 text-center">
+                    <p className="text-destructive">Could not load flat status: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
