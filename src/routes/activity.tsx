@@ -43,6 +43,8 @@ const entityLabel: Record<string, string> = {
   expense: "Expense",
   maintenance: "Maintenance",
   parking: "Parking",
+  admin: "User",
+  property: "Property",
 };
 const actionLabel: Record<string, string> = {
   create: "Added",
@@ -53,6 +55,10 @@ const actionLabel: Record<string, string> = {
   payment: "Payment",
   reverse_payment: "Payment reversed",
   void: "Voided",
+  status: "Status changed",
+  reset_password: "Password reset",
+  assign: "Assignments",
+  subscription: "Subscription",
 };
 
 function actionVariant(a: string): "default" | "secondary" | "destructive" | "outline" {
@@ -63,6 +69,7 @@ function actionVariant(a: string): "default" | "secondary" | "destructive" | "ou
 
 function show(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return `${value.length} item${value.length === 1 ? "" : "s"}`;
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
