@@ -1,3 +1,4 @@
+import { countOf } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -161,7 +162,7 @@ function SubscriptionStatusPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={daysVariant(d)}>
-                          {d === null ? "No plan" : d < 0 ? `Expired ${-d}d ago` : `${d} days`}
+                          {d === null ? "No plan" : d < 0 ? `Expired ${-d}d ago` : countOf(d, "day")}
                         </Badge>
                       </TableCell>
                     </TableRow>

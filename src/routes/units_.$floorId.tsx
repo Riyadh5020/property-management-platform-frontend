@@ -1,3 +1,4 @@
+import { countOf } from "@/lib/utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Layers, LayoutGrid, List, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -143,7 +144,7 @@ function FloorUnitsPage() {
     }
     const savedCount = rows.filter((r) => r.id).length;
     if (n < savedCount) {
-      toast.error(`This floor already has ${savedCount} units. The cap cannot be lower.`);
+      toast.error(`This floor already has ${countOf(savedCount, "unit")}. The cap cannot be lower.`);
       return;
     }
     setSavingCap(true);
@@ -264,7 +265,7 @@ function FloorUnitsPage() {
           rent: bulk.rent === "" ? null : Number(bulk.rent),
         })),
       });
-      toast.success(`${res.items.length} units created`);
+      toast.success(`${countOf(res.items.length, "unit")} created`);
       if (res.areaWarning) toast.warning(res.areaWarning);
       setBulkOpen(false);
       await load();
@@ -295,7 +296,7 @@ function FloorUnitsPage() {
     setCopying(true);
     try {
       const res = await floorApi.copyLayout(floorId, sourceFloorId);
-      toast.success(`${res.items.length} units copied`);
+      toast.success(`${countOf(res.items.length, "unit")} copied`);
       if (res.areaWarning) toast.warning(res.areaWarning);
       setCopyOpen(false);
       await load();

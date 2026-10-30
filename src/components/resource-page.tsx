@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { propertyApi, type ApiSubscriptionHistory } from "@/lib/api";
+import { auditLogApi, propertyApi, type ApiAuditLog, type ApiSubscriptionHistory } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { resources, type FieldDef, type Row } from "@/lib/mock-data";
 import { formatMoney, useCollection } from "@/lib/store";
@@ -215,6 +215,7 @@ const canEditRow = (row: Row) =>
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [newPlanId, setNewPlanId] = useState("");
       const [history, setHistory] = useState<ApiSubscriptionHistory[]>([]);
+  const [ownerChanges, setOwnerChanges] = useState<ApiAuditLog[]>([]);
   const [extendDays, setExtendDays] = useState("");
   const [discountPlanId, setDiscountPlanId] = useState("");
   const [discountAmount, setDiscountAmount] = useState("");
@@ -279,6 +280,13 @@ const canEditRow = (row: Row) =>
     setAdjustNote("");
     if (resource === "properties" && (role === "superAdmin" || role === "owner")) {
       loadHistory(row.id);
+    }
+    setOwnerChanges([]);
+    if (resource === "properties" && role === "superAdmin") {
+      auditLogApi
+        .list({ propertyId: row.id, entityType: "property", limit: 100 })
+        .then((res) => setOwnerChanges(res.items.filter((log) => log.changes?.["ownerId"])))
+        .catch(() => setOwnerChanges([]));
     }
   };
 
@@ -817,6 +825,30 @@ const canEditRow = (row: Row) =>
           value={adjustNote}
           onChange={(e) => setAdjustNote(e.target.value)}
         />
+      </div>
+    ) : null}
+
+    {role === "superAdmin" ? (
+      <div className="mt-3 border-t border-border pt-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Owner changes
+        </p>
+        {ownerChanges.length === 0 ? (
+          <p className="text-xs text-muted-foreground">The owner has not changed.</p>
+        ) : (
+          <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
+            {ownerChanges.map((log) => (
+              <li key={log.id} className="flex items-center justify-between gap-2">
+                <span>
+                  {refLabel(log.changes?.["ownerId"]?.from) ?? "—"} → {refLabel(log.changes?.["ownerId"]?.to) ?? "—"}
+                </span>
+                <span className="shrink-0 text-muted-foreground">
+                  {log.actorName ?? "—"} · {String(log.createdAt).slice(0, 10)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     ) : null}
 

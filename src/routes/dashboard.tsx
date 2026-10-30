@@ -1,3 +1,4 @@
+import { countOf } from "@/lib/utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -313,7 +314,7 @@ function DashboardPage() {
                         className="mt-2"
                         variant={s.daysLeft <= 7 ? "destructive" : "secondary"}
                       >
-                        {s.daysLeft <= 0 ? "Expired" : `${s.daysLeft} days left`}
+                        {s.daysLeft <= 0 ? "Expired" : `${countOf(s.daysLeft, "day")} left`}
                       </Badge>
                     </div>
                   ))}

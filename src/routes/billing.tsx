@@ -484,7 +484,7 @@ function BillingPage() {
                       onChange={(e) => setCharges({ ...charges, penalty: e.target.value })} />
                   </div>
                   <div className="space-y-1">
-                    <Label>Other</Label>
+                    <Label>Parking &amp; other</Label>
                     <Input type="number" min={0} disabled={!editable} value={charges.other}
                       onChange={(e) => setCharges({ ...charges, other: e.target.value })} />
                   </div>

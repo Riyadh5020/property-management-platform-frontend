@@ -1,3 +1,4 @@
+import { countOf } from "@/lib/utils";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { OwnerDrill } from "@/components/owner-drill";
 import { PropertyPicker } from "@/components/property-picker";
@@ -74,7 +75,7 @@ function FloorCards({ floors, titleOf }: { floors: ApiFloor[]; titleOf: (f: ApiF
               {floor.name ? ` (${floor.name})` : ""}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {floor.totalUnits != null ? `Capacity: ${floor.totalUnits} units` : "No unit cap set"}
+              {floor.totalUnits != null ? `Capacity: ${countOf(floor.totalUnits, "unit")}` : "No unit cap set"}
             </p>
           </div>
           <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
