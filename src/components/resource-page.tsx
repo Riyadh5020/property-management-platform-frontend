@@ -75,10 +75,13 @@ function renderCell(
 ) {if (field.key === "subscriptionEndsAt") return <SubscriptionDays endsAt={value} />;
 
   if (value === undefined || value === null || value === "") {
-    return <span className="text-muted-foreground">—</span>;
+    return <span className="text-muted-foreground">{field.emptyLabel ?? "—"}</span>;
   }
   if (field.type === "boolean") {
     return <Badge variant={value ? "default" : "outline"}>{value ? "Yes" : "No"}</Badge>;
+  }
+  if (field.type === "textarea") {
+    return <span className="block min-w-48 max-w-sm whitespace-pre-wrap">{String(value)}</span>;
   }
   if (field.type === "date") return String(value).slice(0, 10);
   if (field.type === "money") return formatMoney(value);
@@ -139,7 +142,7 @@ export function ResourcePage({
       }
     : undefined;
 
-  const { rows, create, update, remove, reset, apiBacked, loaded, isFetching, total } = useCollection(
+  const { rows, create, update, remove, reset, apiBacked, loaded, loadError, isFetching, total } = useCollection(
     resource,
     backendFilters,
   );
@@ -161,7 +164,10 @@ export function ResourcePage({
   const role = admin?.admin?.role;
 
   const refField = def.fields.find((f) => f.type === "entity-select");
-  const { rows: refRows } = useCollection(refField?.sourceResource ?? "__none__");
+  const { rows: refRows } = useCollection(
+    refField?.sourceResource ?? "__none__",
+    def.recordRules ? { limit: 200 } : undefined,
+  );
 
   // Second entity-select (e.g. subscription plan on properties). It must be
   // declared after the main reference field (owner) in mock-data.ts.
@@ -176,24 +182,34 @@ export function ResourcePage({
   //   parent id shows up in refRows, it's theirs.
   const isOwnRow = (row: Row) => {
     if (role !== "owner") return false;
+    if (def.recordRules && row["ownerId"] === admin?.admin?.id) return true;
     if (resource === "properties") return row["ownerId"] === admin?.admin?.id;
     if (refField) return refRows.some((r) => r.id === row[refField.key]);
     return false;
   };
 
-  const canCreate = role === "superAdmin" || (resource === "units" && role === "owner");
+  const rules = def.recordRules;
+  const canCreate = rules
+    ? rules.createRoles
+      ? rules.createRoles.includes(role ?? "")
+      : role !== "manager" || rules.managerWrite
+    : role === "superAdmin" || (resource === "units" && role === "owner");
 
   const canDeleteRow = (row: Row) =>
-    role === "superAdmin" || (resource === "units" && role === "owner" && isOwnRow(row));
+    role === "superAdmin" ||
+    (rules !== undefined && role === "owner" && isOwnRow(row)) || (resource === "units" && role === "owner" && isOwnRow(row));
 
 const canEditRow = (row: Row) =>
-  role === "superAdmin" || (role === "owner" && resource !== "floors" && isOwnRow(row));
+  role === "superAdmin" ||
+  (role === "owner" && resource !== "floors" && isOwnRow(row)) ||
+  (role === "manager" && rules?.managerWrite === true);
   const [editing, setEditing] = useState<Row | null>(null);
-  const editingAsRestrictedOwner = role === "owner" && editing !== null;
+  const editingAsRestrictedOwner = role === "owner" && editing !== null && !rules;
   const fieldLocked = (f: FieldDef) => editingAsRestrictedOwner && !f.ownerEditable;
 
   // tableOnly fields are display-only; createOnly fields are hidden when editing.
-  const isFormField = (f: FieldDef) => !f.tableOnly && !(editing && f.createOnly);
+  const isFormField = (f: FieldDef) =>
+    !f.tableOnly && !(editing && f.createOnly) && (!f.superAdminOnly || role === "superAdmin");
 
   const [open, setOpen] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
@@ -219,6 +235,7 @@ const canEditRow = (row: Row) =>
 
    const refLabel = (id: unknown, row?: Row) => {
     if (!refField || !id) return null;
+    if (rules && row?.["propertyTitle"]) return String(row["propertyTitle"]);
     if (resource === "properties" && refField.key === "ownerId" && row?.["ownerName"]) {
       return String(row["ownerName"]);
     }
@@ -329,9 +346,9 @@ const canEditRow = (row: Row) =>
               variant="ghost"
               size="sm"
               onClick={() => void reset()}
-              title={apiBacked ? "Refresh from server" : "Restore demo data"}
+              title="Refresh"
             >
-              <RotateCcw className="size-4" /> {apiBacked ? "Refresh" : "Reset demo"}
+              <RotateCcw className="size-4" /> Refresh
             </Button>
             {canCreate ? (
               <Button size="sm" onClick={openCreate}>
@@ -458,7 +475,16 @@ const canEditRow = (row: Row) =>
             if (canEditRow(r)) openEdit(r);
           }}
         />      ) : null}
-      {viewMode === "table" ? (
+      {loadError ? (
+        <div className="rounded-xl border border-border bg-card py-14 text-center">
+          <p className="text-sm text-destructive">
+            Could not load {def.title.toLowerCase()}: {loadError}
+          </p>
+          <Button variant="secondary" size="sm" className="mt-3" onClick={() => void reset()}>
+            Try again
+          </Button>
+        </div>
+      ) : viewMode === "table" ? (
         <div className={`overflow-hidden rounded-xl border border-border bg-card transition-opacity ${isFetching ? "opacity-60" : ""}`}>
           <div className="overflow-x-auto">
             <Table>
@@ -497,7 +523,7 @@ const canEditRow = (row: Row) =>
                     <TableRow key={row.id}>
                       {columns.map((f) => (
                         <TableCell key={f.key} className="whitespace-nowrap">
-                          {renderCell(f, row[f.key], refLabel)}
+                          {renderCell(f, row[f.key], refLabel, row)}
                         </TableCell>
                       ))}
                       <TableCell className="sticky right-0 bg-card text-right">
@@ -593,7 +619,7 @@ const canEditRow = (row: Row) =>
                         .map((f) => (
                           <div key={f.key} className="flex items-center justify-between gap-2 text-sm">
                             <span className="text-muted-foreground">{f.label}</span>
-                            <span className="text-right">{renderCell(f, row[f.key], refLabel)}</span>
+                            <span className="text-right">{renderCell(f, row[f.key], refLabel, row)}</span>
                           </div>
                         ))}
                     </div>

@@ -243,8 +243,14 @@ function FloorUnitsPage() {
 
   const submitBulk = async () => {
     const area = Number(bulk.areaSize);
-    if (bulkPreview.length === 0) return toast.error("Enter a count greater than 0");
-    if (!area || area <= 0) return toast.error("Area size must be greater than 0");
+    if (bulkPreview.length === 0) {
+      toast.error("Enter a count greater than 0");
+      return;
+    }
+    if (!area || area <= 0) {
+      toast.error("Area size must be greater than 0");
+      return;
+    }
     setBulkSaving(true);
     try {
       const res = await unitApi.bulkCreate({
@@ -282,7 +288,10 @@ function FloorUnitsPage() {
   };
 
   const submitCopy = async () => {
-    if (!sourceFloorId) return toast.error("Choose a floor to copy from");
+    if (!sourceFloorId) {
+      toast.error("Choose a floor to copy from");
+      return;
+    }
     setCopying(true);
     try {
       const res = await floorApi.copyLayout(floorId, sourceFloorId);
@@ -557,7 +566,7 @@ function FloorUnitsPage() {
                   onClick={() => void saveRow(index)}
                   disabled={savingIndex === index}
                 >
-                  <Save className="size-4 text-emerald-600" />
+                  <Save className="size-4 text-primary" />
                   Save
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => void removeRow(index)}>
@@ -712,7 +721,7 @@ function FloorUnitsPage() {
                           aria-label="Save"
                           title="Save"
                         >
-                          <Save className="size-4 text-emerald-600" />
+                          <Save className="size-4 text-primary" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => void removeRow(index)} aria-label="Delete" title="Delete">
                           {row.id ? <Trash2 className="size-4 text-destructive" /> : <X className="size-4" />}

@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Building2 } from "lucide-react";
+
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { ReactNode } from "react";
 
 export function AuthLayout({
@@ -24,17 +26,19 @@ export function AuthLayout({
         </Link>
         <div className="text-primary-foreground">
           <h2 className="max-w-md text-3xl font-semibold leading-tight">
-            Buildings, tenants, leases, billing and facilities in one operations console.
+            Your buildings, tenants and rent, all in one place.
           </h2>
           <p className="mt-4 max-w-md text-sm opacity-80">
-            Multi-building portfolios, unit-level status tracking, rent collection and owner
-            payouts — built for property managers.
+            See which flats are occupied, who has paid and what needs fixing.
           </p>
         </div>
         <p className="text-xs text-primary-foreground/70">© 2026 EstateOps</p>
       </div>
 
-      <div className="flex items-center justify-center px-5 py-12">
+      <div className="relative flex items-center justify-center px-5 py-12">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-sm">
           {badge ? (
             <span className="mb-4 inline-flex rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">

@@ -4,6 +4,7 @@ import {
   adminApi,
   floorApi,
   propertyApi,
+  recordApi,
   subscriptionPlanApi,
   unitApi,
   type BillingCycle,
@@ -79,7 +80,36 @@ function planLabel(name: string, amount: number, durationDays: number) {
 const limitVal = (x: unknown): number | null =>
   x === undefined || x === null || x === "" ? null : Number(x);
 
+// Choice fields with a server default can be left out, but never sent empty.
+const NOT_NULLABLE = ["status", "audience", "priority"];
+
+function recordAdapter(kind: string): ApiAdapter {
+  return {
+    list: (params) => recordApi.list(kind, params ?? {}),
+    create: (v) =>
+      recordApi.create(kind, Object.fromEntries(Object.entries(v).filter(([, value]) => value !== ""))),
+    update: (id, v) =>
+      recordApi.update(
+        kind,
+        id,
+        Object.fromEntries(
+          Object.entries(v)
+            .filter(([key, value]) => value !== "" || !NOT_NULLABLE.includes(key))
+            .map(([key, value]) => [key, value === "" ? null : value]),
+        ),
+      ),
+    remove: (id) => recordApi.remove(kind, id).then(() => undefined),
+  };
+}
+
 const apiAdapters: Record<string, ApiAdapter> = {
+  notices: recordAdapter("notices"),
+  visitors: recordAdapter("visitors"),
+  staff: recordAdapter("staff"),
+  utilities: recordAdapter("utilities"),
+  amenities: recordAdapter("amenities"),
+  emergencyContacts: recordAdapter("emergencyContacts"),
+  tickets: recordAdapter("tickets"),
   properties: {
     list: (params) =>
       propertyApi.list(params ?? {}) as unknown as Promise<{ items: Record<string, unknown>[]; total: number }>,
@@ -186,6 +216,7 @@ export function useCollection(resource: string, filters?: Record<string, unknown
   const [total, setTotal] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { ready: authReady, admin } = useAuth();
   const filtersKey = JSON.stringify(filters ?? {});
 
@@ -194,6 +225,7 @@ export function useCollection(resource: string, filters?: Record<string, unknown
     const result = await adapter.list(filters);
     setRows(result.items as Row[]);
     setTotal(result.total);
+    setLoadError(null);
     setLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adapter, filtersKey]);
@@ -203,7 +235,11 @@ export function useCollection(resource: string, filters?: Record<string, unknown
       if (!authReady || !admin?.token) return;
       setIsFetching(true);
       refetch()
-        .catch((err) => console.error(`Failed to load ${resource}`, err))
+        .catch((err: unknown) => {
+          console.error(`Failed to load ${resource}`, err);
+          setLoadError(err instanceof Error ? err.message : "unknown error");
+          setLoaded(true);
+        })
         .finally(() => setIsFetching(false));
       return;
     }
@@ -258,7 +294,9 @@ export function useCollection(resource: string, filters?: Record<string, unknown
 
   const reset = useCallback(async () => {
     if (adapter) {
-      await refetch();
+      await refetch().catch((err: unknown) => {
+        setLoadError(err instanceof Error ? err.message : "unknown error");
+      });
       return;
     }
     if (typeof window !== "undefined") {
@@ -268,7 +306,7 @@ export function useCollection(resource: string, filters?: Record<string, unknown
     setRows(readRows(resource));
   }, [resource, adapter, refetch]);
 
-  return { rows, loaded, isFetching, total, create, update, remove, reset, apiBacked: Boolean(adapter) };
+  return { rows, loaded, loadError, isFetching, total, create, update, remove, reset, apiBacked: Boolean(adapter) };
 }
 
 export function resetAllDemoData() {

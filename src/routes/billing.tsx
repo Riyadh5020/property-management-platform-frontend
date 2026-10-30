@@ -61,6 +61,38 @@ function statusBadge(inv: ApiInvoice) {
   return <Badge variant="secondary">{inv.status}</Badge>;
 }
 
+const escapeHtml = (value: unknown) =>
+  String(value ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// Opens a one-page receipt in a new tab and starts printing (or saving as PDF).
+function printReceipt(invoice: ApiInvoice, payment: ApiPayment) {
+  const win = window.open("", "_blank");
+  if (!win) {
+    toast.error("Please allow pop-ups to print the receipt");
+    return;
+  }
+  const rows: [string, unknown][] = [
+    ["Receipt for", invoice.tenantName],
+    ["Building", invoice.propertyTitle],
+    ["Unit", invoice.unitCode],
+    ["Invoice", invoice.invoiceNo],
+    ["Month", String(invoice.billingMonth).slice(0, 7)],
+    ["Paid on", payment.paidOn],
+    ["Payment method", payment.method],
+    ["Reference", payment.reference ?? "—"],
+    ["Amount paid", formatMoney(payment.amount)],
+    ["Still due on this invoice", formatMoney(invoice.totalAmount - invoice.paidAmount)],
+  ];
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${escapeHtml(invoice.invoiceNo)}</title>
+<style>body{font:15px system-ui,sans-serif;color:#222;max-width:560px;margin:40px auto;padding:0 16px}h1{font-size:22px;margin:0 0 4px}p{color:#666;margin:0 0 24px}table{width:100%;border-collapse:collapse}td{padding:10px 0;border-bottom:1px solid #ddd}td:last-child{text-align:right;font-weight:600}</style>
+</head><body><h1>Payment receipt</h1><p>EstateOps</p><table>${rows
+    .map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`)
+    .join("")}</table></body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
 function BillingPage() {
   const { admin, ready } = useAuth();
   // Managers may add and correct records but not delete them (the API enforces this too).
@@ -69,6 +101,7 @@ function BillingPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -97,6 +130,7 @@ function BillingPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await invoiceApi.list({
         limit: PAGE_SIZE,
@@ -108,7 +142,7 @@ function BillingPage() {
       setInvoices(res.items);
       setTotal(res.total);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load invoices");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -312,6 +346,20 @@ function BillingPage() {
                     Loading…
                   </TableCell>
                 </TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-10 text-center">
+                    <p className="text-destructive">Could not load invoices: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ) : invoices.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
@@ -511,9 +559,14 @@ function BillingPage() {
                           {p.note ? ` — ${p.note}` : ""}
                         </span>
                         {p.amount > 0 && !reversedIds.has(p.id) ? (
-                          <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setReversing(p); setReverseNote(""); }}>
-                            Reverse
-                          </Button>
+                          <span className="flex shrink-0 gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => printReceipt(active, p)}>
+                              Receipt
+                            </Button>
+                            <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setReversing(p); setReverseNote(""); }}>
+                              Reverse
+                            </Button>
+                          </span>
                         ) : p.amount > 0 ? (
                           <span className="text-xs text-muted-foreground">reversed</span>
                         ) : null}

@@ -89,6 +89,7 @@ function LeasesPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -115,6 +116,7 @@ function LeasesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await leaseApi.list({
         limit: PAGE_SIZE,
@@ -125,7 +127,7 @@ function LeasesPage() {
       setLeases(res.items);
       setTotal(res.total);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load leases");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -333,6 +335,20 @@ function LeasesPage() {
                 <TableRow>
                   <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                     Loading…
+                  </TableCell>
+                </TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-10 text-center">
+                    <p className="text-destructive">Could not load leases: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
                   </TableCell>
                 </TableRow>
               ) : leases.length === 0 ? (

@@ -45,6 +45,9 @@ const entityLabel: Record<string, string> = {
   parking: "Parking",
   admin: "User",
   property: "Property",
+  floor: "Floor",
+  unit: "Unit",
+  request: "Request",
 };
 const actionLabel: Record<string, string> = {
   create: "Added",
@@ -59,10 +62,12 @@ const actionLabel: Record<string, string> = {
   reset_password: "Password reset",
   assign: "Assignments",
   subscription: "Subscription",
+  approve: "Approved",
+  deny: "Rejected",
 };
 
 function actionVariant(a: string): "default" | "secondary" | "destructive" | "outline" {
-  if (a === "delete" || a === "void" || a === "reverse_payment") return "destructive";
+  if (["delete", "void", "reverse_payment", "deny"].includes(a)) return "destructive";
   if (a === "create" || a === "generate" || a === "payment") return "default";
   return "secondary";
 }
