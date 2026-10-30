@@ -1,3 +1,4 @@
+import { countOf } from "@/lib/utils";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { SubscriptionPill } from "@/components/subscription-alert";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,7 @@ export function OwnerDrill({
           <Button variant="ghost" size="sm" className="mb-2" onClick={onBack}>
             <ArrowLeft className="size-4" /> All owners
           </Button>
-          <PageHeader title={selected.name} description={`${selected.email} · ${selected.properties.length} properties`} />
+          <PageHeader title={selected.name} description={`${selected.email} · ${countOf(selected.properties.length, "property", "properties")}`} />
         </>
       ) : (
         <PageHeader
