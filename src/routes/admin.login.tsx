@@ -56,21 +56,20 @@ function AdminLoginPage() {
 
   return (
     <AuthLayout
-      badge="Restricted area"
-      title="Administrator sign in"
-      subtitle="Separate credentials from tenant/manager accounts."
+      title="Sign in"
+      subtitle="Use the email and password you were given."
     >
       <form onSubmit={submit} className="space-y-4">
         <FormError message={error} />
         <div className="space-y-2">
-          <Label htmlFor="email">Admin email</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="superadmin@example.com"
+            placeholder="you@example.com"
           />
         </div>
  <div className="space-y-2">

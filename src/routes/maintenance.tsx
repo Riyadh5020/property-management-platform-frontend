@@ -84,6 +84,7 @@ function MaintenancePage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -113,6 +114,7 @@ function MaintenancePage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await maintenanceApi.list({
         limit: PAGE_SIZE, offset: page * PAGE_SIZE,
@@ -124,7 +126,7 @@ function MaintenancePage() {
       setItems(res.items);
       setTotal(res.total);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load maintenance");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -332,6 +334,20 @@ function MaintenancePage() {
             <TableBody>
               {loading ? (
                 <TableRow><TableCell colSpan={10} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={10} className="py-10 text-center">
+                    <p className="text-destructive">Could not load work orders: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ) : items.length === 0 ? (
                 <TableRow><TableCell colSpan={10} className="py-10 text-center text-muted-foreground">No work orders found.</TableCell></TableRow>
               ) : (

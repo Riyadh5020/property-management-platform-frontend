@@ -628,7 +628,7 @@ function PropertyRequestsPanel({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                             {actioningId === req.id ? (
                               <Loader2 className="size-4 animate-spin" />
                             ) : (
-                              <Check className="size-4 text-emerald-600" />
+                              <Check className="size-4 text-primary" />
                             )}
                           </Button>
                           <Button
@@ -1090,7 +1090,7 @@ function FloorRequestsPanel({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                             {actioningId === req.id ? (
                               <Loader2 className="size-4 animate-spin" />
                             ) : (
-                              <Check className="size-4 text-emerald-600" />
+                              <Check className="size-4 text-primary" />
                             )}
                           </Button>
                           <Button

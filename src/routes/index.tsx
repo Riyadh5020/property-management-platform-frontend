@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Manage buildings, units, tenants, leases, rent billing, utilities, maintenance, security and owner payouts in one console.",
+          "Manage buildings, units, tenants, leases, rent, utilities, maintenance and visitors in one place.",
       },
       { property: "og:title", content: "EstateOps — Property Management Console" },
       {
@@ -34,14 +35,14 @@ export const Route = createFileRoute("/")({
 
 const modules = [
   { icon: Building2, title: "Buildings & units", text: "Multi-building registry with floor, unit type, furnishing and live status." },
-  { icon: Users, title: "Tenants", text: "Profiles, ID documents, co-tenants and move-in / move-out workflow." },
-  { icon: FileSignature, title: "Leases", text: "Agreements, digital signing status, escalation schedules and deposits." },
-  { icon: Receipt, title: "Rent & billing", text: "Monthly invoices, utility charges, penalties and partial payments." },
-  { icon: Wrench, title: "Maintenance", text: "Requests, approvals, preventive schedules and common area upkeep." },
-  { icon: ShieldCheck, title: "Visitors & security", text: "Visitor log, deliveries, guard roster and incident reports." },
-  { icon: CarFront, title: "Parking", text: "Slot assignment per unit, visitor parking and fee tracking." },
-  { icon: Gauge, title: "Utilities", text: "Meter readings, bill calculation and vendor management." },
-  { icon: PieChart, title: "Owners & reports", text: "Ownership records, payouts and per-building analytics." },
+  { icon: Users, title: "Tenants", text: "Contact details, ID documents, co-tenants and move-in / move-out dates." },
+  { icon: FileSignature, title: "Leases", text: "Agreements, deposits and yearly rent increases." },
+  { icon: Receipt, title: "Rent & billing", text: "Automatic monthly invoices, partial payments and printable receipts." },
+  { icon: Wrench, title: "Maintenance", text: "Repair requests, owner approval and automatic expense records." },
+  { icon: ShieldCheck, title: "Visitors", text: "A simple log of guests, deliveries and incidents." },
+  { icon: CarFront, title: "Parking", text: "Assign slots to units and track each slot's fee." },
+  { icon: Gauge, title: "Utilities", text: "Meter readings with the bill worked out for you." },
+  { icon: PieChart, title: "Records", text: "A full history of who changed what, and when." },
 ];
 
 function LandingPage() {
@@ -56,6 +57,7 @@ function LandingPage() {
         </div>
         <span className="font-semibold">EstateOps</span>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           <Button asChild size="sm">
             <Link to="/admin/login">Sign in</Link>
           </Button>
@@ -67,15 +69,14 @@ function LandingPage() {
           Property management platform
         </p>
         <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-          Run every building, unit, tenant and taka from one console.
+          Run your buildings, tenants and rent from one place.
         </h1>
         <p className="mt-5 max-w-2xl text-muted-foreground">
-          EstateOps brings occupancy, leases, rent collection, utilities, maintenance, security and
-          owner payouts together — one console for super admins, owners and managers.
+          See which flats are occupied, who has paid and what needs fixing, whether you run the building yourself or with a manager.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link to="/admin/login">Sign in to your console</Link>
+            <Link to="/admin/login">Sign in</Link>
           </Button>
         </div>
       </section>

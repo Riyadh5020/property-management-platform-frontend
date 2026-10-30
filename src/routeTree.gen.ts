@@ -31,6 +31,7 @@ import { Route as StaffRouteImport } from './routes/staff'
 import { Route as SubscriptionStatusRouteImport } from './routes/subscription-status'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as TenantsRouteImport } from './routes/tenants'
+import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as UtilitiesRouteImport } from './routes/utilities'
 import { Route as VisitorsRouteImport } from './routes/visitors'
@@ -151,6 +152,11 @@ const TenantsRoute = TenantsRouteImport.update({
   path: '/tenants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TicketsRoute = TicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnitsRoute = UnitsRouteImport.update({
   id: '/units',
   path: '/units',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
+  '/tickets': typeof TicketsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
+  '/tickets': typeof TicketsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
+  '/tickets': typeof TicketsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
   '/visitors': typeof VisitorsRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
+    | '/tickets'
     | '/units'
     | '/utilities'
     | '/visitors'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
+    | '/tickets'
     | '/units'
     | '/utilities'
     | '/visitors'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
+    | '/tickets'
     | '/units'
     | '/utilities'
     | '/visitors'
@@ -422,6 +434,7 @@ export interface RootRouteChildren {
   SubscriptionStatusRoute: typeof SubscriptionStatusRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
   TenantsRoute: typeof TenantsRoute
+  TicketsRoute: typeof TicketsRoute
   UnitsRoute: typeof UnitsRoute
   UtilitiesRoute: typeof UtilitiesRoute
   VisitorsRoute: typeof VisitorsRoute
@@ -589,6 +602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tickets': {
+      id: '/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof TicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/units': {
       id: '/units'
       path: '/units'
@@ -678,6 +698,7 @@ const rootRouteChildren: RootRouteChildren = {
   SubscriptionStatusRoute: SubscriptionStatusRoute,
   SubscriptionsRoute: SubscriptionsRoute,
   TenantsRoute: TenantsRoute,
+  TicketsRoute: TicketsRoute,
   UnitsRoute: UnitsRoute,
   UtilitiesRoute: UtilitiesRoute,
   VisitorsRoute: VisitorsRoute,

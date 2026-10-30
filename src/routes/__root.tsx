@@ -7,11 +7,11 @@ import {
   createRootRouteWithContext,
   useRouter,
   useRouterState,
-  type ErrorComponentProps,
-} from "@tanstack/react-router";
+  type ErrorComponentProps, ScriptOnce } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import { themeInitScript } from "../components/theme-toggle";
 import { Toaster } from "../components/ui/sonner";
 import { AuthProvider } from "../lib/auth";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -116,8 +116,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <ScriptOnce>{themeInitScript}</ScriptOnce>
         <HeadContent />
       </head>
       <body>

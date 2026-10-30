@@ -50,6 +50,7 @@ function ExpensesPage() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -72,6 +73,7 @@ function ExpensesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await expenseApi.list({
         limit: PAGE_SIZE, offset: page * PAGE_SIZE,
@@ -85,7 +87,7 @@ function ExpensesPage() {
       setTotal(res.total);
       setTotalAmount(res.totalAmount);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load expenses");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -225,6 +227,20 @@ function ExpensesPage() {
             <TableBody>
               {loading ? (
                 <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center">
+                    <p className="text-destructive">Could not load expenses: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ) : items.length === 0 ? (
                 <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">No expenses found.</TableCell></TableRow>
               ) : (

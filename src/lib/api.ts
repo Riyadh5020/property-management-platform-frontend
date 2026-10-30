@@ -793,6 +793,12 @@ export interface ApiTenant {
   moveInDate: string | null;
   moveOutDate: string | null;
   status: TenantStatus;
+  occupation?: string | null;
+  permanentAddress?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  familyMembers?: number | null;
+  notes?: string | null;
   propertyTitle?: string | null;
   unitCode?: string | null;
   createdAt?: string;
@@ -1039,6 +1045,20 @@ export interface ApiParking {
   propertyTitle?: string | null;
   unitCode?: string | null;
 }
+
+// Notices, visitors, staff, utilities, amenities, emergency contacts and support tickets.
+export const recordApi = {
+  list: (kind: string, params: ListParams & { status?: string; propertyId?: string } = {}) =>
+    apiRequest<unknown>(`/records/${kind}${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<Record<string, unknown>>(res),
+    ),
+  create: (kind: string, body: Record<string, unknown>) =>
+    apiRequest<Record<string, unknown>>(`/records/${kind}`, { method: "POST", body, auth: "admin" }),
+  update: (kind: string, id: string, body: Record<string, unknown>) =>
+    apiRequest<Record<string, unknown>>(`/records/${kind}/${id}`, { method: "PUT", body, auth: "admin" }),
+  remove: (kind: string, id: string) =>
+    apiRequest<unknown>(`/records/${kind}/${id}`, { method: "DELETE", auth: "admin" }),
+};
 
 export const parkingApi = {
   list: (params: ListParams & { status?: string; slotType?: string; propertyId?: string } = {}) =>

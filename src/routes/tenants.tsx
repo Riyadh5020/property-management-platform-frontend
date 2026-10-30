@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type ApiFloor,
   type ApiProperty,
@@ -87,6 +88,12 @@ const emptyForm = {
   status: "active",
   moveInDate: "",
   moveOutDate: "",
+  occupation: "",
+  permanentAddress: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  familyMembers: "",
+  notes: "",
 };
 type Form = typeof emptyForm;
 
@@ -98,6 +105,7 @@ function TenantsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -123,6 +131,7 @@ function TenantsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await tenantApi.list({
         limit: PAGE_SIZE,
@@ -133,7 +142,7 @@ function TenantsPage() {
       setTenants(res.items);
       setTotal(res.total);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load tenants");
+      setLoadError(err instanceof Error ? err.message : "unknown error");
     } finally {
       setLoading(false);
     }
@@ -201,6 +210,12 @@ function TenantsPage() {
       status: t.status,
       moveInDate: t.moveInDate ?? "",
       moveOutDate: t.moveOutDate ?? "",
+      occupation: t.occupation ?? "",
+      permanentAddress: t.permanentAddress ?? "",
+      emergencyContactName: t.emergencyContactName ?? "",
+      emergencyContactPhone: t.emergencyContactPhone ?? "",
+      familyMembers: t.familyMembers === null || t.familyMembers === undefined ? "" : String(t.familyMembers),
+      notes: t.notes ?? "",
     });
     setFloors([]);
     setUnits([]);
@@ -231,6 +246,15 @@ function TenantsPage() {
 
     const nullable = (s: string) => (s.trim() ? s.trim() : null);
 
+    const profile = {
+      occupation: nullable(form.occupation),
+      permanentAddress: nullable(form.permanentAddress),
+      emergencyContactName: nullable(form.emergencyContactName),
+      emergencyContactPhone: nullable(form.emergencyContactPhone),
+      familyMembers: form.familyMembers === "" ? null : Number(form.familyMembers),
+      notes: nullable(form.notes),
+    };
+
     setSaving(true);
     try {
       if (editing) {
@@ -245,6 +269,7 @@ function TenantsPage() {
           status: form.status,
           moveInDate: form.moveInDate || null,
           moveOutDate: form.moveOutDate || null,
+          ...profile,
         });
         toast.success("Tenant updated");
       } else {
@@ -260,6 +285,7 @@ function TenantsPage() {
           status: form.status,
           moveInDate: form.moveInDate || null,
           moveOutDate: form.moveOutDate || null,
+          ...profile,
         });
         toast.success("Tenant created");
       }
@@ -290,7 +316,7 @@ function TenantsPage() {
     <AppShell>
       <PageHeader
         title="Tenants"
-        description="Tenant profiles, ID documents, co-tenants and move-in / move-out."
+        description="Everyone living in your units, with their contact details and move-in dates."
         actions={
           <>
             <Button variant="ghost" size="sm" onClick={() => void load()}>
@@ -349,6 +375,20 @@ function TenantsPage() {
                 <TableRow>
                   <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                     Loading…
+                  </TableCell>
+                </TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center">
+                    <p className="text-destructive">Could not load tenants: {loadError}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void load()}
+                    >
+                      Try again
+                    </Button>
                   </TableCell>
                 </TableRow>
               ) : tenants.length === 0 ? (
@@ -608,6 +648,34 @@ function TenantsPage() {
                 value={form.moveOutDate}
                 onChange={(e) => set("moveOutDate", e.target.value)}
               />
+            </div>
+
+            <p className="border-b border-border pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:col-span-2">
+              More about this tenant (optional)
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="t-job">Occupation</Label>
+              <Input id="t-job" value={form.occupation} onChange={(e) => set("occupation", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="t-family">People living in the unit</Label>
+              <Input id="t-family" type="number" min={0} value={form.familyMembers} onChange={(e) => set("familyMembers", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="t-ecname">Emergency contact name</Label>
+              <Input id="t-ecname" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="t-ecphone">Emergency contact phone</Label>
+              <Input id="t-ecphone" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="t-address">Permanent address</Label>
+              <Input id="t-address" value={form.permanentAddress} onChange={(e) => set("permanentAddress", e.target.value)} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="t-notes">Notes</Label>
+              <Textarea id="t-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} />
             </div>
           </div>
 

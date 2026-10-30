@@ -1,4 +1,5 @@
 import { CountBadge } from "@/components/count-badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import type { ManagerPermissions } from "@/lib/api";
 import { displayName, initials, useAuth } from "@/lib/auth";
@@ -9,19 +10,23 @@ import {
   Building2,
   CalendarClock,
   CarFront,
-  ClipboardList,
 
   FileQuestion,
+  Dumbbell,
   History,
+  LifeBuoy,
+  Megaphone,
+  PhoneCall,
+  UserCheck,
+  UsersRound,
+  Zap,
   FileText,
   Home,
   Layers,
   LayoutDashboard,
   LayoutGrid,
   LogOut,
-  Megaphone,
   Menu,
-  PhoneCall,
   PieChart,
   Receipt,
 
@@ -41,106 +46,96 @@ interface NavItem {
 
 type NavSection = { group: string; items: NavItem[] };
 
-const managerNav: NavSection[] = [
+// The same plain groups for owners and managers; a manager only sees what their permissions allow.
+const workspaceNav = (isOwner: boolean): NavSection[] => [
   {
-    group: "Overview",
+    group: "Home",
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
-    group: "Portfolio",
+    group: "Buildings",
     items: [
       { to: "/properties", label: "Properties", icon: Home },
       { to: "/floors", label: "Floors", icon: Layers },
       { to: "/units", label: "Units", icon: LayoutGrid },
+      { to: "/flat-status", label: "Flat status", icon: Building2 },
     ],
   },
   {
-    group: "Operations",
+    group: "Tenants & rent",
     items: [
-      { to: "/expenses", label: "Expenses", icon: Wallet },
-      { to: "/parking", label: "Parking", icon: CarFront },
       { to: "/tenants", label: "Tenants", icon: Users },
-      { to: "/flat-status", label: "Flat status", icon: Building2 },
       { to: "/leases", label: "Leases", icon: FileText },
+      { to: "/billing", label: "Rent & billing", icon: Receipt },
+    ],
+  },
+  {
+    group: "Day-to-day",
+    items: [
       { to: "/maintenance", label: "Maintenance", icon: Wrench },
-      { to: "/billing", label: "Rent & billing", icon: Receipt },
-      { to: "/staff", label: "Staff", icon: ClipboardList },
-      { to: "/emergency-contacts", label: "Emergency contacts", icon: PhoneCall },
-    ],
-  },
-  {
-    group: "Insights",
-    items: [
-      { to: "/notices", label: "Notices", icon: Megaphone },
-    ],
-  },
-];
-
-const ownerNav: NavSection[] = [
-  {
-    group: "Overview",
-    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-  },
-  {
-    group: "Portfolio",
-    items: [
-      { to: "/properties", label: "Properties", icon: Home },
-      { to: "/floors", label: "Floors", icon: Layers },
-      { to: "/units", label: "Units", icon: LayoutGrid },
-    ],
-  },
-  {
-    group: "Operations",
-    items: [
       { to: "/expenses", label: "Expenses", icon: Wallet },
+      { to: "/utilities", label: "Utilities", icon: Zap },
       { to: "/parking", label: "Parking", icon: CarFront },
-      { to: "/tenants", label: "Tenants", icon: Users },
-      { to: "/leases", label: "Leases", icon: FileText },
-      { to: "/maintenance", label: "Maintenance approvals", icon: Wrench },
-      { to: "/billing", label: "Rent & billing", icon: Receipt },
-      { to: "/staff", label: "Staff", icon: ClipboardList },
+      { to: "/visitors", label: "Visitors", icon: UserCheck },
+      { to: "/notices", label: "Notices", icon: Megaphone },
+      { to: "/amenities", label: "Amenities", icon: Dumbbell },
       { to: "/emergency-contacts", label: "Emergency contacts", icon: PhoneCall },
     ],
   },
-    {
-    group: "Ownership",
-    items: [
-      { to: "/flat-status", label: "Flat status", icon: Building2 },
-{ to: "/admin/admins", label: "Managers", icon: Shield },   { to: "/requests", label: "Requests", icon: FileQuestion },
-      { to: "/activity", label: "Activity log", icon: History },
-    ],
-  },
-  {
-    group: "Insights",
-    items: [
-      { to: "/notices", label: "Notices", icon: Megaphone },
-    ],
-  },
+  ...(isOwner
+    ? [
+        {
+          group: "Team & records",
+          items: [
+            { to: "/admin/admins", label: "Managers", icon: Shield },
+            { to: "/staff", label: "Staff", icon: UsersRound },
+            { to: "/requests", label: "Requests", icon: FileQuestion },
+            { to: "/activity", label: "Activity log", icon: History },
+            { to: "/tickets", label: "Support", icon: LifeBuoy },
+          ],
+        },
+      ]
+    : []),
 ];
 
 const superAdminConsoleNav: NavSection[] = [
   {
-    group: "Console",
+    group: "Home",
+    items: [{ to: "/admin", label: "Overview", icon: LayoutDashboard }],
+  },
+  {
+    group: "People & requests",
     items: [
-      { to: "/admin", label: "Overview", icon: LayoutDashboard },
       { to: "/admin/admins", label: "Users", icon: Shield },
+      { to: "/requests", label: "Requests", icon: FileQuestion },
+    ],
+  },
+  {
+    group: "Buildings",
+    items: [
+      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/floors", label: "Floors", icon: Layers },
+      { to: "/units", label: "Units", icon: LayoutGrid },
+    ],
+  },
+  {
+    group: "Subscriptions",
+    items: [
+      { to: "/subscriptions", label: "Plans", icon: Sparkles },
+      { to: "/subscription-status", label: "Subscription status", icon: CalendarClock },
+    ],
+  },
+  {
+    group: "Records",
+    items: [
+      { to: "/notices", label: "Announcements", icon: Megaphone },
+      { to: "/tickets", label: "Support tickets", icon: LifeBuoy },
+      { to: "/reports", label: "Reports", icon: PieChart },
       { to: "/activity", label: "Activity log", icon: History },
     ],
   },
-     {
-    group: "Platform",
-    items: [
-      { to: "/reports", label: "Reports", icon: PieChart },
-      { to: "/properties", label: "Properties", icon: Home },
-      { to: "/requests", label: "Requests", icon: FileQuestion },
-      { to: "/floors", label: "Floors", icon: Layers },
-      { to: "/units", label: "Units", icon: LayoutGrid },
-      { to: "/subscriptions", label: "Subscription", icon: Sparkles },
-      { to: "/subscription-status", label: "Subscription status", icon: CalendarClock },
-      { to: "/notices", label: "Notices", icon: Megaphone },
-    ],
-  },
 ];
+
 const NAV_PERMISSION: Record<string, keyof ManagerPermissions> = {
   "/tenants": "tenants",
   "/billing": "rent",
@@ -148,15 +143,8 @@ const NAV_PERMISSION: Record<string, keyof ManagerPermissions> = {
   "/expenses": "expenses",
   "/maintenance": "maintenance",
   "/parking": "rent",
+  "/utilities": "rent",
 };
-// Pages that still run on localStorage demo data. Remove a path from this
-// set when its real backend ships (Batch 5).
-const DEMO_ONLY_PATHS = new Set([
-  "/staff",
-  "/emergency-contacts",
-  "/notices",
-]);
-
 
 export function AppShell({
   children,
@@ -173,7 +161,7 @@ export function AppShell({
   const role = session?.admin?.role;
   const isConsole = variant === "console" || role === "superAdmin";
 
-  const baseNav = isConsole ? superAdminConsoleNav : role === "owner" ? ownerNav : managerNav;
+  const baseNav = isConsole ? superAdminConsoleNav : workspaceNav(role === "owner");
   const perms = session?.admin?.permissions ?? null;
     const permFiltered =
     role === "manager" && !isConsole
@@ -185,12 +173,8 @@ export function AppShell({
           }),
         }))
       : baseNav;
-  const nav = permFiltered
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) => !DEMO_ONLY_PATHS.has(item.to)),
-    }))
-    .filter((section) => section.items.length > 0);
+  const nav = permFiltered.filter((section) => section.items.length > 0);
+  const pageTitle = nav.flatMap((s) => s.items).find((i) => i.to === pathname)?.label ?? "";
         const pending = usePendingRequests();
   useEffect(() => {
     setOpen(false);
@@ -292,7 +276,7 @@ export function AppShell({
 
       {open ? (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-foreground/40 lg:hidden"
           onClick={() => setOpen(false)}
           aria-hidden
         />
@@ -307,10 +291,9 @@ export function AppShell({
           >
             <Menu className="size-5" />
           </button>
-          <p className="text-sm text-muted-foreground">
-            {isConsole ? "Administration" : "Workspace"}
-          </p>
+          <p className="text-sm font-medium">{pageTitle}</p>
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
                       {isConsole ? (
               <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
                 Property workspace

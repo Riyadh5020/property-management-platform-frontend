@@ -24,6 +24,8 @@ export interface FieldDef {
   createOnly?: boolean;
   section?: string;
   advanced?: boolean;
+  superAdminOnly?: boolean;
+  emptyLabel?: string;
     defaultValue?: string;
 
 }
@@ -36,6 +38,8 @@ export interface ResourceDef {
   fields: FieldDef[];
   seed: Record<string, unknown>[];
   apiBacked?: boolean;
+  // Set on real day-to-day records; says who besides the owner may write them.
+  recordRules?: { managerWrite: boolean; createRoles?: string[] };
 }
 
 export type Row = Record<string, unknown> & { id: string };
@@ -57,6 +61,28 @@ function def(
   seed: Record<string, unknown>[],
 ): ResourceDef {
   return { key, title, singular, description, fields, seed };
+}
+
+const PROPERTY_FIELD: FieldDef = {
+  key: "propertyId",
+  label: "Building",
+  type: "entity-select",
+  sourceResource: "properties",
+  labelKey: "title",
+  inTable: true,
+  required: true,
+  createOnly: true,
+};
+
+function record(
+  key: string,
+  title: string,
+  singular: string,
+  description: string,
+  fields: FieldDef[],
+  recordRules: NonNullable<ResourceDef["recordRules"]>,
+): ResourceDef {
+  return { key, title, singular, description, fields, seed: [], apiBacked: true, recordRules };
 }
 
 export const resources: Record<string, ResourceDef> = {
@@ -185,32 +211,19 @@ description: "Floors under a property.",
 
    
 
-  amenities: def(
+  amenities: record(
     "amenities",
     "Amenities",
     "Amenity",
-    "Shared facilities available in each building.",
+    "Shared facilities such as a gym, rooftop or hall.",
     [
-      { key: "name", label: "Amenity", inTable: true },
-      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
-      { key: "capacity", label: "Capacity", type: "number", inTable: true },
-      { key: "chargeable", label: "Charge", type: "money", inTable: true },
-      {
-        key: "status",
-        label: "Status",
-        type: "select",
-        options: ["Available", "Closed", "Under maintenance"],
-        inTable: true,
-        badge: true,
-      },
+      { key: "name", label: "Amenity", inTable: true, required: true },
+      PROPERTY_FIELD,
+      { key: "capacity", label: "How many people fit", type: "number", inTable: true },
+      { key: "chargeable", label: "Charge (0 if free)", type: "money", inTable: true },
+      { key: "status", label: "Status", type: "select", options: ["Available", "Closed", "Under maintenance"], inTable: true, badge: true, defaultValue: "Available" },
     ],
-    [
-      { name: "Rooftop garden", building: "Emerald Heights", capacity: 60, chargeable: 0, status: "Available" },
-      { name: "Gym", building: "Emerald Heights", capacity: 25, chargeable: 1500, status: "Available" },
-      { name: "Underground parking", building: "Slate Tower", capacity: 90, chargeable: 3000, status: "Available" },
-      { name: "Conference hall", building: "Uttara Business Park", capacity: 80, chargeable: 5000, status: "Under maintenance" },
-      { name: "Swimming pool", building: "Riverside Court", capacity: 30, chargeable: 2000, status: "Closed" },
-    ],
+    { managerWrite: false },
   ),
 
   tenants: def(
@@ -312,27 +325,23 @@ description: "Floors under a property.",
     ],
   ),
 
-  visitors: def(
+  visitors: record(
     "visitors",
-    "Visitors & Security",
-    "Log entry",
-    "Visitor log, deliveries, guard roster and incident reports.",
+    "Visitors",
+    "Visitor",
+    "Who came in, who they visited and when they left.",
     [
-      { key: "name", label: "Visitor / courier", inTable: true },
-      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
-      { key: "unit", label: "Visiting unit", inTable: true },
+      { key: "name", label: "Visitor or courier name", inTable: true, required: true },
+      PROPERTY_FIELD,
+      { key: "unit", label: "Visiting unit", inTable: true, placeholder: "e.g. 4B" },
       { key: "purpose", label: "Purpose", type: "select", options: ["Guest", "Delivery", "Contractor", "Incident"], inTable: true },
-      { key: "entryTime", label: "Entry", placeholder: "2026-08-11 14:20", inTable: true },
-      { key: "exitTime", label: "Exit", placeholder: "2026-08-11 15:05", inTable: true },
+      { key: "entryTime", label: "Came in", placeholder: "2026-08-11 14:20", inTable: true },
+      { key: "exitTime", label: "Left", placeholder: "2026-08-11 15:05", inTable: true },
       { key: "guard", label: "Guard on duty", inTable: true },
-      { key: "status", label: "Status", type: "select", options: ["Inside", "Checked out", "Denied"], inTable: true, badge: true },
-      { key: "notes", label: "Notes / incident detail", type: "textarea" },
+      { key: "status", label: "Status", type: "select", options: ["Inside", "Checked out", "Denied"], inTable: true, badge: true, defaultValue: "Inside" },
+      { key: "notes", label: "Notes", type: "textarea" },
     ],
-    [
-      { name: "Arif Chowdhury", building: "Emerald Heights", unit: "EH-4B", purpose: "Guest", entryTime: "2026-08-11 14:20", exitTime: "", guard: "Shahin (Shift A)", status: "Inside", notes: "" },
-      { name: "Pathao Courier", building: "Slate Tower", unit: "ST-12C", purpose: "Delivery", entryTime: "2026-08-11 11:05", exitTime: "2026-08-11 11:18", guard: "Bashir (Shift A)", status: "Checked out", notes: "Parcel handed to reception." },
-      { name: "Unknown vehicle", building: "Riverside Court", unit: "Gate", purpose: "Incident", entryTime: "2026-08-09 22:40", exitTime: "2026-08-09 22:45", guard: "Rubel (Shift C)", status: "Denied", notes: "Attempted entry without pass; police notified." },
-    ],
+    { managerWrite: true },
   ),
 
   parking: def(
@@ -401,52 +410,42 @@ description: "Floors under a property.",
       },
     ],
   ),
-  staff: def(
+  staff: record(
     "staff",
     "Staff",
     "Staff member",
-    "Building-wise staff, duty schedule and attendance.",
+    "Guards, cleaners and other people who work in your buildings.",
     [
-      { key: "name", label: "Name", inTable: true },
-      { key: "role", label: "Role", type: "select", options: ["Guard", "Cleaner", "Electrician", "Plumber", "Manager"], inTable: true },
-      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
+      { key: "name", label: "Name", inTable: true, required: true },
+      { key: "role", label: "Job", type: "select", options: ["Guard", "Cleaner", "Electrician", "Plumber", "Caretaker", "Other"], inTable: true },
+      PROPERTY_FIELD,
       { key: "shift", label: "Shift", type: "select", options: ["Morning", "Evening", "Night", "General"], inTable: true },
       { key: "phone", label: "Phone", inTable: true },
       { key: "salary", label: "Monthly salary", type: "money", inTable: true },
-      { key: "attendance", label: "Attendance this month (days)", type: "number", inTable: true },
-      { key: "status", label: "Status", type: "select", options: ["On duty", "Off duty", "On leave"], inTable: true, badge: true },
+      { key: "attendance", label: "Days present this month", type: "number", inTable: true },
+      { key: "status", label: "Status", type: "select", options: ["On duty", "Off duty", "On leave"], inTable: true, badge: true, defaultValue: "On duty" },
     ],
-    [
-      { name: "Shahin Alam", role: "Guard", building: "Emerald Heights", shift: "Morning", phone: "+8801811112222", salary: 16000, attendance: 10, status: "On duty" },
-      { name: "Rubel Mia", role: "Guard", building: "Riverside Court", shift: "Night", phone: "+8801833334444", salary: 17000, attendance: 9, status: "Off duty" },
-      { name: "Kulsum Begum", role: "Cleaner", building: "Slate Tower", shift: "General", phone: "+8801855556666", salary: 12000, attendance: 11, status: "On duty" },
-      { name: "Jamal Uddin", role: "Electrician", building: "Uttara Business Park", shift: "General", phone: "+8801877778888", salary: 22000, attendance: 8, status: "On leave" },
-    ],
+    { managerWrite: false },
   ),
 
-  utilities: def(
+  utilities: record(
     "utilities",
     "Utilities",
-    "Meter reading",
-    "Meter readings, bill calculation and vendor tracking.",
+    "Utility bill",
+    "Electricity, gas, water and service charge bills, flat by flat.",
     [
-      { key: "unit", label: "Unit / area", inTable: true },
-      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
-      { key: "utility", label: "Utility", type: "select", options: ["Electricity", "Gas", "Water", "Service charge"], inTable: true },
-      { key: "vendor", label: "Vendor", inTable: true },
-      { key: "period", label: "Period", placeholder: "2026-08", inTable: true },
-      { key: "previous", label: "Previous reading", type: "number", inTable: true },
-      { key: "current", label: "Current reading", type: "number", inTable: true },
-      { key: "rate", label: "Unit rate", type: "number", inTable: true },
-      { key: "amount", label: "Amount", type: "money", inTable: true },
-      { key: "status", label: "Status", type: "select", options: ["Billed", "Pending", "Paid"], inTable: true, badge: true },
+      { key: "unit", label: "Unit or area", inTable: true, required: true, placeholder: "e.g. 4B or Common area" },
+      PROPERTY_FIELD,
+      { key: "utility", label: "Type", type: "select", options: ["Electricity", "Gas", "Water", "Service charge"], inTable: true },
+      { key: "vendor", label: "Provider", inTable: true },
+      { key: "period", label: "Month", placeholder: "2026-08", inTable: true },
+      { key: "previous", label: "Previous meter reading", type: "number" },
+      { key: "current", label: "Current meter reading", type: "number" },
+      { key: "rate", label: "Rate per unit", type: "number" },
+      { key: "amount", label: "Amount", type: "money", inTable: true, placeholder: "Leave blank to calculate" },
+      { key: "status", label: "Status", type: "select", options: ["Billed", "Pending", "Paid"], inTable: true, badge: true, defaultValue: "Pending" },
     ],
-    [
-      { unit: "EH-4B", building: "Emerald Heights", utility: "Electricity", vendor: "DPDC", period: "2026-08", previous: 10420, current: 10695, rate: 8.5, amount: 2337, status: "Billed" },
-      { unit: "ST-12C", building: "Slate Tower", utility: "Electricity", vendor: "DPDC", period: "2026-08", previous: 42210, current: 43510, rate: 8.5, amount: 11050, status: "Pending" },
-      { unit: "Common area", building: "Emerald Heights", utility: "Water", vendor: "Dhaka WASA", period: "2026-08", previous: 880, current: 1010, rate: 15, amount: 1950, status: "Paid" },
-      { unit: "RC-2A", building: "Riverside Court", utility: "Gas", vendor: "Titas Gas", period: "2026-08", previous: 0, current: 0, rate: 0, amount: 1080, status: "Billed" },
-    ],
+    { managerWrite: true },
   ),
 
   owners: def(
@@ -494,22 +493,19 @@ description: "Floors under a property.",
     ],
   ),
 
-  emergencyContacts: def(
+  emergencyContacts: record(
     "emergencyContacts",
     "Emergency Contacts",
     "Contact",
-    "Emergency contacts per building — fire, police, medical, vendors.",
+    "Who to call for fire, police, medical help or urgent repairs.",
     [
-      { key: "name", label: "Contact name", inTable: true },
-      { key: "building", label: "Building", type: "select", options: BUILDINGS, inTable: true },
-      { key: "category", label: "Category", type: "select", options: ["Fire service", "Police", "Ambulance", "Electrician", "Plumber", "Other"], inTable: true },
+      { key: "name", label: "Contact name", inTable: true, required: true },
+      PROPERTY_FIELD,
+      { key: "category", label: "Type", type: "select", options: ["Fire service", "Police", "Ambulance", "Electrician", "Plumber", "Other"], inTable: true },
       { key: "phone", label: "Phone", inTable: true },
       { key: "notes", label: "Notes", type: "textarea" },
     ],
-    [
-      { name: "Dhaka Fire Service - Gulshan", building: "Emerald Heights", category: "Fire service", phone: "999", notes: "" },
-      { name: "Jamal (on-call electrician)", building: "Slate Tower", category: "Electrician", phone: "+8801911223344", notes: "Available 24/7 for emergency callouts." },
-    ],
+    { managerWrite: false },
   ),
 
   flatStatus: def(
@@ -531,22 +527,34 @@ description: "Floors under a property.",
     ],
   ),
 
-  notices: def(
+  notices: record(
     "notices",
     "Notices",
     "Notice",
-    "Announcements posted to owners and managers.",
+    "Announcements for your team. No building chosen means it is for everyone.",
     [
-      { key: "title", label: "Title", inTable: true },
-      { key: "audience", label: "Audience", type: "select", options: ["All", "Owners", "Managers"], inTable: true },
-      { key: "postedDate", label: "Posted", type: "date", inTable: true },
-      { key: "priority", label: "Priority", type: "select", options: ["Normal", "Important", "Urgent"], inTable: true, badge: true },
-      { key: "body", label: "Message", type: "textarea" },
+      { key: "title", label: "Title", inTable: true, required: true },
+      { ...PROPERTY_FIELD, required: false, emptyLabel: "Everyone" },
+      { key: "audience", label: "For", type: "select", options: ["All", "Owners", "Managers"], inTable: true, defaultValue: "All" },
+      { key: "postedDate", label: "Date", type: "date", inTable: true },
+      { key: "priority", label: "Priority", type: "select", options: ["Normal", "Important", "Urgent"], inTable: true, badge: true, defaultValue: "Normal" },
+      { key: "body", label: "Message", type: "textarea", inTable: true },
     ],
+    { managerWrite: false },
+  ),
+
+  tickets: record(
+    "tickets",
+    "Support",
+    "Support ticket",
+    "Tell us about a problem and read the reply here.",
     [
-      { title: "Water supply maintenance - Aug 20", audience: "All", postedDate: "2026-08-15", priority: "Important", body: "Water supply will be interrupted 10am-2pm for tank cleaning across all buildings." },
-      { title: "Updated maintenance approval process", audience: "Managers", postedDate: "2026-08-10", priority: "Normal", body: "All maintenance requests above 10,000 BDT now require owner approval before work begins." },
+      { key: "title", label: "What is the problem?", inTable: true, required: true },
+      { key: "message", label: "Details", type: "textarea", inTable: true },
+      { key: "reply", label: "Reply from support", type: "textarea", inTable: true, superAdminOnly: true },
+      { key: "status", label: "Status", type: "select", options: ["Open", "In progress", "Closed"], inTable: true, badge: true, superAdminOnly: true },
     ],
+    { managerWrite: false, createRoles: ["owner"] },
   ),
 
    subscriptions: {
