@@ -1,4 +1,5 @@
 import { CountBadge } from "@/components/count-badge";
+import { PageGuide } from "@/components/page-guide";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import type { ManagerPermissions } from "@/lib/api";
@@ -301,6 +302,7 @@ export function AppShell({
           </button>
           <p className="text-sm font-medium">{pageTitle}</p>
           <div className="ml-auto flex items-center gap-2">
+            <PageGuide />
             <ThemeToggle />
                       {isConsole ? (
               <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
