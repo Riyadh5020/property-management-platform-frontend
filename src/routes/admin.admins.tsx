@@ -412,6 +412,22 @@ function AdminAdminsPage() {
                       >
                         <Pencil className="size-4" />
                       </Button>
+                      {actingRole === "superAdmin" && admin.role === "owner" && admin.status === "active" ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            auth
+                              .viewAsOwner(admin.id)
+                              .then(() => navigate({ to: "/dashboard" }))
+                              .catch((err: unknown) => {
+                                toast.error(err instanceof Error ? err.message : "Could not open this account");
+                              });
+                          }}
+                        >
+                          View as owner
+                        </Button>
+                      ) : null}
                       {admin.id !== actingId &&
                       (actingRole === "superAdmin" ||
                         (actingRole === "owner" && admin.role === "manager")) ? (

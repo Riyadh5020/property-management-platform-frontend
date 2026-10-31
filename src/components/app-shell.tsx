@@ -12,7 +12,10 @@ import {
   CarFront,
 
   FileQuestion,
+  CreditCard,
+  Download,
   Dumbbell,
+  TicketPercent,
   History,
   LifeBuoy,
   Megaphone,
@@ -91,6 +94,8 @@ const workspaceNav = (isOwner: boolean): NavSection[] => [
             { to: "/staff", label: "Staff", icon: UsersRound },
             { to: "/requests", label: "Requests", icon: FileQuestion },
             { to: "/activity", label: "Activity log", icon: History },
+            { to: "/subscription-invoices", label: "Billing", icon: CreditCard },
+            { to: "/export", label: "Export data", icon: Download },
             { to: "/tickets", label: "Support", icon: LifeBuoy },
           ],
         },
@@ -123,6 +128,8 @@ const superAdminConsoleNav: NavSection[] = [
     items: [
       { to: "/subscriptions", label: "Plans", icon: Sparkles },
       { to: "/subscription-status", label: "Subscription status", icon: CalendarClock },
+      { to: "/subscription-invoices", label: "Billing", icon: CreditCard },
+      { to: "/coupons", label: "Coupons", icon: TicketPercent },
     ],
   },
   {
@@ -132,6 +139,7 @@ const superAdminConsoleNav: NavSection[] = [
       { to: "/tickets", label: "Support tickets", icon: LifeBuoy },
       { to: "/reports", label: "Reports", icon: PieChart },
       { to: "/activity", label: "Activity log", icon: History },
+      { to: "/export", label: "Export data", icon: Download },
     ],
   },
 ];
@@ -301,6 +309,16 @@ export function AppShell({
             ) : null}
           </div>
         </header>
+        {auth.viewingAs ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-4 py-2 text-sm text-accent-foreground lg:px-8">
+            <span>
+              You are viewing {displayName(session.admin)}'s account. You can look around, but changes are turned off.
+            </span>
+            <Button size="sm" variant="secondary" onClick={auth.stopViewing}>
+              Back to my account
+            </Button>
+          </div>
+        ) : null}
         <main className="px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>

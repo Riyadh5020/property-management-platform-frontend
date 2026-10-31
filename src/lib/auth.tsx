@@ -10,11 +10,15 @@ interface AuthContextValue {
   loginAdmin: (email: string, password: string) => Promise<void>;
   logoutAdmin: () => void;
   setAdminProfile: (admin: ApiAdmin) => void;
+  viewingAs: boolean;
+  viewAsOwner: (ownerId: string) => Promise<void>;
+  stopViewing: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const ADMIN_PROFILE_KEY = "pms.adminProfile";
 const ADMIN_REFRESH_KEY = "pms.adminRefreshToken";
+const VIEW_AS_MINUTES = 30;
 
 function readProfile(key: string): ApiAdmin | null {
   if (typeof window === "undefined") return null;
@@ -36,6 +40,7 @@ function writeProfile(key: string, admin: ApiAdmin | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Session>(null);
   const [ready, setReady] = useState(false);
+  const [viewingAs, setViewingAs] = useState(false);
   const restoreRanRef = useRef(false);
 
   useEffect(() => {
@@ -88,6 +93,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAdmin((prev) => (prev ? { ...prev, admin: profile } : prev));
   }, []);
 
+  // Support access stays in memory only. The superAdmin's saved session is untouched, so a page
+  // reload is what ends it and returns to their own account.
+  const stopViewing = useCallback(() => {
+    window.location.assign("/admin/admins");
+  }, []);
+
+  const viewAsOwner = useCallback(
+    async (ownerId: string) => {
+      const result = await adminApi.viewAs(ownerId);
+      tokenStore.setAdmin(result.accessToken);
+      setViewingAs(true);
+      setAdmin({ token: result.accessToken, admin: result.admin });
+      window.setTimeout(stopViewing, VIEW_AS_MINUTES * 60 * 1000);
+    },
+    [stopViewing],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       admin,
@@ -95,8 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginAdmin,
       logoutAdmin,
       setAdminProfile,
+      viewingAs,
+      viewAsOwner,
+      stopViewing,
     }),
-    [admin, ready, loginAdmin, logoutAdmin, setAdminProfile],
+    [admin, ready, loginAdmin, logoutAdmin, setAdminProfile, viewingAs, viewAsOwner, stopViewing],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

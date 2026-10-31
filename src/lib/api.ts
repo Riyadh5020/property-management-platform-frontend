@@ -302,6 +302,19 @@ export const adminApi = {
     permissions?: ManagerPermissions | null;
   }) => apiRequest<ApiAdmin>("/admins/create", { method: "POST", body, auth: "admin" }),
   getAdmin: (id: string) => apiRequest<ApiAdmin>(`/admins/${id}`, { auth: "admin" }),
+  signup: (body: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber?: string | null;
+    password: string;
+    acceptTerms: true;
+  }) => apiRequest<{ id: string }>("/admins/signup", { method: "POST", body }),
+  viewAs: (id: string) =>
+    apiRequest<{ accessToken: string; admin: ApiAdmin }>(`/admins/${id}/view-as`, {
+      method: "POST",
+      auth: "admin",
+    }),
    updateAdmin: (
     id: string,
     body: { firstName: string; lastName: string; email: string; phoneNumber?: string | null; role?: AdminRole; permissions?: ManagerPermissions | null },
@@ -1058,6 +1071,71 @@ export const recordApi = {
     apiRequest<Record<string, unknown>>(`/records/${kind}/${id}`, { method: "PUT", body, auth: "admin" }),
   remove: (kind: string, id: string) =>
     apiRequest<unknown>(`/records/${kind}/${id}`, { method: "DELETE", auth: "admin" }),
+};
+
+export interface ApiSubscriptionInvoice {
+  id: string;
+  invoiceNo: string;
+  description: string;
+  amount: number;
+  discountAmount: number;
+  couponCode: string | null;
+  status: "due" | "paid" | "void";
+  dueDate: string;
+  paidOn: string | null;
+  method: string | null;
+  reference: string | null;
+  propertyTitle?: string | null;
+  ownerEmail?: string | null;
+  planName?: string | null;
+}
+
+export interface ApiCoupon {
+  id: string;
+  code: string;
+  discountType: "percent" | "fixed";
+  value: number;
+  maxUses: number | null;
+  usedCount: number;
+  expiresOn: string | null;
+  status: "active" | "inactive";
+}
+
+export interface ApiBusinessStats {
+  mrr: number;
+  collectedThisMonth: number;
+  outstanding: number;
+  activeOwners: number;
+  trialOwners: number;
+  expiredOwners: number;
+  newOwners30Days: number;
+  lostOwners: number;
+  plans: { name: string; properties: number }[];
+}
+
+export const billingApi = {
+  invoices: (params: ListParams & { status?: string } = {}) =>
+    apiRequest<unknown>(`/billing/invoices${toQuery(params)}`, { auth: "admin" }).then((res) =>
+      toListResult<ApiSubscriptionInvoice>(res),
+    ),
+  pay: (id: string, body: { method: string; paidOn: string; reference?: string | null }) =>
+    apiRequest<ApiSubscriptionInvoice>(`/billing/invoices/${id}/pay`, { method: "PATCH", body, auth: "admin" }),
+  voidInvoice: (id: string) =>
+    apiRequest<ApiSubscriptionInvoice>(`/billing/invoices/${id}/void`, { method: "PATCH", auth: "admin" }),
+  applyCoupon: (id: string, code: string) =>
+    apiRequest<ApiSubscriptionInvoice>(`/billing/invoices/${id}/coupon`, {
+      method: "POST",
+      body: { code },
+      auth: "admin",
+    }),
+  coupons: () => apiRequest<ApiCoupon[]>("/billing/coupons", { auth: "admin" }),
+  createCoupon: (body: Record<string, unknown>) =>
+    apiRequest<ApiCoupon>("/billing/coupons", { method: "POST", body, auth: "admin" }),
+  setCouponStatus: (id: string, status: string) =>
+    apiRequest<ApiCoupon>(`/billing/coupons/${id}`, { method: "PATCH", body: { status }, auth: "admin" }),
+  business: () => apiRequest<ApiBusinessStats>("/billing/business", { auth: "admin" }),
+  exportData: (type: string) =>
+    apiRequest<{ filename: string; csv: string }>(`/billing/export/${type}`, { auth: "admin" }),
 };
 
 export const parkingApi = {
