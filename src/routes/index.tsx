@@ -76,6 +76,9 @@ function LandingPage() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
+            <Link to="/admin/signup">Start free trial</Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary">
             <Link to="/admin/login">Sign in</Link>
           </Button>
         </div>

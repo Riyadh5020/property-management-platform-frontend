@@ -10,13 +10,13 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/admin/login")({
   head: () => ({
     meta: [
-      { title: "Administrator sign in — EstateOps" },
+      { title: "Sign in — EstateOps" },
       {
         name: "description",
-        content: "Administrator console sign in for EstateOps user and admin management.",
+        content: "Sign in to EstateOps.",
       },
-      { property: "og:title", content: "Administrator sign in — EstateOps" },
-      { property: "og:description", content: "Restricted administrator access." },
+      { property: "og:title", content: "Sign in — EstateOps" },
+      { property: "og:description", content: "Sign in to EstateOps." },
     ],
   }),
   component: AdminLoginPage,
@@ -94,6 +94,12 @@ function AdminLoginPage() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          New here?{" "}
+          <Link to="/admin/signup" className="underline">
+            Create an account
+          </Link>
+        </p>
       </form>
     </AuthLayout>
   );

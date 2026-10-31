@@ -13,9 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AmenitiesRouteImport } from './routes/amenities'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EmergencyContactsRouteImport } from './routes/emergency-contacts'
 import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as ExportRouteImport } from './routes/export'
 import { Route as FlatStatusRouteImport } from './routes/flat-status'
 import { Route as FloorsRouteImport } from './routes/floors'
 import { Route as LeasesRouteImport } from './routes/leases'
@@ -28,9 +30,11 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
+import { Route as SubscriptionInvoicesRouteImport } from './routes/subscription-invoices'
 import { Route as SubscriptionStatusRouteImport } from './routes/subscription-status'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as TenantsRouteImport } from './routes/tenants'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as UtilitiesRouteImport } from './routes/utilities'
@@ -40,6 +44,7 @@ import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as AdminForgotPasswordRouteImport } from './routes/admin.forgot-password'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminResetPasswordRouteImport } from './routes/admin.reset-password'
+import { Route as AdminSignupRouteImport } from './routes/admin.signup'
 import { Route as UnitsFloorIdRouteImport } from './routes/units_.$floorId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -62,6 +67,11 @@ const BillingRoute = BillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CouponsRoute = CouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -75,6 +85,11 @@ const EmergencyContactsRoute = EmergencyContactsRouteImport.update({
 const ExpensesRoute = ExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExportRoute = ExportRouteImport.update({
+  id: '/export',
+  path: '/export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FlatStatusRoute = FlatStatusRouteImport.update({
@@ -137,6 +152,11 @@ const StaffRoute = StaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscriptionInvoicesRoute = SubscriptionInvoicesRouteImport.update({
+  id: '/subscription-invoices',
+  path: '/subscription-invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubscriptionStatusRoute = SubscriptionStatusRouteImport.update({
   id: '/subscription-status',
   path: '/subscription-status',
@@ -150,6 +170,11 @@ const SubscriptionsRoute = SubscriptionsRouteImport.update({
 const TenantsRoute = TenantsRouteImport.update({
   id: '/tenants',
   path: '/tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TicketsRoute = TicketsRouteImport.update({
@@ -197,6 +222,11 @@ const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
   path: '/admin/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSignupRoute = AdminSignupRouteImport.update({
+  id: '/admin/signup',
+  path: '/admin/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnitsFloorIdRoute = UnitsFloorIdRouteImport.update({
   id: '/units_/$floorId',
   path: '/units/$floorId',
@@ -208,9 +238,11 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
+  '/coupons': typeof CouponsRoute
   '/dashboard': typeof DashboardRoute
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
+  '/export': typeof ExportRoute
   '/flat-status': typeof FlatStatusRoute
   '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
@@ -223,9 +255,11 @@ export interface FileRoutesByFullPath {
   '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscription-invoices': typeof SubscriptionInvoicesRoute
   '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
+  '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
@@ -234,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/admin/signup': typeof AdminSignupRoute
   '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -242,9 +277,11 @@ export interface FileRoutesByTo {
   '/activity': typeof ActivityRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
+  '/coupons': typeof CouponsRoute
   '/dashboard': typeof DashboardRoute
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
+  '/export': typeof ExportRoute
   '/flat-status': typeof FlatStatusRoute
   '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
@@ -257,9 +294,11 @@ export interface FileRoutesByTo {
   '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscription-invoices': typeof SubscriptionInvoicesRoute
   '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
+  '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
@@ -268,6 +307,7 @@ export interface FileRoutesByTo {
   '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/admin/signup': typeof AdminSignupRoute
   '/units/$floorId': typeof UnitsFloorIdRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -277,9 +317,11 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRoute
   '/amenities': typeof AmenitiesRoute
   '/billing': typeof BillingRoute
+  '/coupons': typeof CouponsRoute
   '/dashboard': typeof DashboardRoute
   '/emergency-contacts': typeof EmergencyContactsRoute
   '/expenses': typeof ExpensesRoute
+  '/export': typeof ExportRoute
   '/flat-status': typeof FlatStatusRoute
   '/floors': typeof FloorsRoute
   '/leases': typeof LeasesRoute
@@ -292,9 +334,11 @@ export interface FileRoutesById {
   '/requests': typeof RequestsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/subscription-invoices': typeof SubscriptionInvoicesRoute
   '/subscription-status': typeof SubscriptionStatusRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/tenants': typeof TenantsRoute
+  '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
   '/units': typeof UnitsRoute
   '/utilities': typeof UtilitiesRoute
@@ -303,6 +347,7 @@ export interface FileRoutesById {
   '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/admin/signup': typeof AdminSignupRoute
   '/units_/$floorId': typeof UnitsFloorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -313,9 +358,11 @@ export interface FileRouteTypes {
     | '/activity'
     | '/amenities'
     | '/billing'
+    | '/coupons'
     | '/dashboard'
     | '/emergency-contacts'
     | '/expenses'
+    | '/export'
     | '/flat-status'
     | '/floors'
     | '/leases'
@@ -328,9 +375,11 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/staff'
+    | '/subscription-invoices'
     | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
+    | '/terms'
     | '/tickets'
     | '/units'
     | '/utilities'
@@ -339,6 +388,7 @@ export interface FileRouteTypes {
     | '/admin/forgot-password'
     | '/admin/login'
     | '/admin/reset-password'
+    | '/admin/signup'
     | '/units/$floorId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -347,9 +397,11 @@ export interface FileRouteTypes {
     | '/activity'
     | '/amenities'
     | '/billing'
+    | '/coupons'
     | '/dashboard'
     | '/emergency-contacts'
     | '/expenses'
+    | '/export'
     | '/flat-status'
     | '/floors'
     | '/leases'
@@ -362,9 +414,11 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/staff'
+    | '/subscription-invoices'
     | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
+    | '/terms'
     | '/tickets'
     | '/units'
     | '/utilities'
@@ -373,6 +427,7 @@ export interface FileRouteTypes {
     | '/admin/forgot-password'
     | '/admin/login'
     | '/admin/reset-password'
+    | '/admin/signup'
     | '/units/$floorId'
     | '/admin'
   id:
@@ -381,9 +436,11 @@ export interface FileRouteTypes {
     | '/activity'
     | '/amenities'
     | '/billing'
+    | '/coupons'
     | '/dashboard'
     | '/emergency-contacts'
     | '/expenses'
+    | '/export'
     | '/flat-status'
     | '/floors'
     | '/leases'
@@ -396,9 +453,11 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/staff'
+    | '/subscription-invoices'
     | '/subscription-status'
     | '/subscriptions'
     | '/tenants'
+    | '/terms'
     | '/tickets'
     | '/units'
     | '/utilities'
@@ -407,6 +466,7 @@ export interface FileRouteTypes {
     | '/admin/forgot-password'
     | '/admin/login'
     | '/admin/reset-password'
+    | '/admin/signup'
     | '/units_/$floorId'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -416,9 +476,11 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRoute
   AmenitiesRoute: typeof AmenitiesRoute
   BillingRoute: typeof BillingRoute
+  CouponsRoute: typeof CouponsRoute
   DashboardRoute: typeof DashboardRoute
   EmergencyContactsRoute: typeof EmergencyContactsRoute
   ExpensesRoute: typeof ExpensesRoute
+  ExportRoute: typeof ExportRoute
   FlatStatusRoute: typeof FlatStatusRoute
   FloorsRoute: typeof FloorsRoute
   LeasesRoute: typeof LeasesRoute
@@ -431,9 +493,11 @@ export interface RootRouteChildren {
   RequestsRoute: typeof RequestsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
+  SubscriptionInvoicesRoute: typeof SubscriptionInvoicesRoute
   SubscriptionStatusRoute: typeof SubscriptionStatusRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
   TenantsRoute: typeof TenantsRoute
+  TermsRoute: typeof TermsRoute
   TicketsRoute: typeof TicketsRoute
   UnitsRoute: typeof UnitsRoute
   UtilitiesRoute: typeof UtilitiesRoute
@@ -442,6 +506,7 @@ export interface RootRouteChildren {
   AdminForgotPasswordRoute: typeof AdminForgotPasswordRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminResetPasswordRoute: typeof AdminResetPasswordRoute
+  AdminSignupRoute: typeof AdminSignupRoute
   UnitsFloorIdRoute: typeof UnitsFloorIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -476,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coupons': {
+      id: '/coupons'
+      path: '/coupons'
+      fullPath: '/coupons'
+      preLoaderRoute: typeof CouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -495,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/expenses'
       fullPath: '/expenses'
       preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/export': {
+      id: '/export'
+      path: '/export'
+      fullPath: '/export'
+      preLoaderRoute: typeof ExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/flat-status': {
@@ -581,6 +660,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscription-invoices': {
+      id: '/subscription-invoices'
+      path: '/subscription-invoices'
+      fullPath: '/subscription-invoices'
+      preLoaderRoute: typeof SubscriptionInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/subscription-status': {
       id: '/subscription-status'
       path: '/subscription-status'
@@ -600,6 +686,13 @@ declare module '@tanstack/react-router' {
       path: '/tenants'
       fullPath: '/tenants'
       preLoaderRoute: typeof TenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tickets': {
@@ -665,6 +758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/signup': {
+      id: '/admin/signup'
+      path: '/admin/signup'
+      fullPath: '/admin/signup'
+      preLoaderRoute: typeof AdminSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/units_/$floorId': {
       id: '/units_/$floorId'
       path: '/units/$floorId'
@@ -680,9 +780,11 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRoute,
   AmenitiesRoute: AmenitiesRoute,
   BillingRoute: BillingRoute,
+  CouponsRoute: CouponsRoute,
   DashboardRoute: DashboardRoute,
   EmergencyContactsRoute: EmergencyContactsRoute,
   ExpensesRoute: ExpensesRoute,
+  ExportRoute: ExportRoute,
   FlatStatusRoute: FlatStatusRoute,
   FloorsRoute: FloorsRoute,
   LeasesRoute: LeasesRoute,
@@ -695,9 +797,11 @@ const rootRouteChildren: RootRouteChildren = {
   RequestsRoute: RequestsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
+  SubscriptionInvoicesRoute: SubscriptionInvoicesRoute,
   SubscriptionStatusRoute: SubscriptionStatusRoute,
   SubscriptionsRoute: SubscriptionsRoute,
   TenantsRoute: TenantsRoute,
+  TermsRoute: TermsRoute,
   TicketsRoute: TicketsRoute,
   UnitsRoute: UnitsRoute,
   UtilitiesRoute: UtilitiesRoute,
@@ -706,6 +810,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminForgotPasswordRoute: AdminForgotPasswordRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminResetPasswordRoute: AdminResetPasswordRoute,
+  AdminSignupRoute: AdminSignupRoute,
   UnitsFloorIdRoute: UnitsFloorIdRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
