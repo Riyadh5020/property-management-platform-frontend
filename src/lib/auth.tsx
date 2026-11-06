@@ -8,6 +8,7 @@ interface AuthContextValue {
   admin: Session;
   ready: boolean;
   loginAdmin: (email: string, password: string) => Promise<void>;
+  loginDemo: () => Promise<void>;
   logoutAdmin: () => void;
   setAdminProfile: (admin: ApiAdmin) => void;
   viewingAs: boolean;
@@ -72,12 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void restoreSession();
   }, []);
 
-  const loginAdmin = useCallback(async (email: string, password: string) => {
-    const result = await adminApi.login({ email, password });
+  const startSession = useCallback((result: Awaited<ReturnType<typeof adminApi.login>>) => {
     tokenStore.setAdmin(result.accessToken, result.refreshToken ?? null);
     writeProfile(ADMIN_PROFILE_KEY, result.admin ?? null);
     setAdmin({ token: result.accessToken, admin: result.admin ?? null });
   }, []);
+
+  const loginAdmin = useCallback(
+    async (email: string, password: string) => {
+      startSession(await adminApi.login({ email, password }));
+    },
+    [startSession],
+  );
+
+  const loginDemo = useCallback(async () => {
+    startSession(await adminApi.demoLogin());
+  }, [startSession]);
 
    const logoutAdmin = useCallback(() => {
     void adminApi.logout().catch(() => {
@@ -115,13 +126,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       admin,
       ready,
       loginAdmin,
+      loginDemo,
       logoutAdmin,
       setAdminProfile,
       viewingAs,
       viewAsOwner,
       stopViewing,
     }),
-    [admin, ready, loginAdmin, logoutAdmin, setAdminProfile, viewingAs, viewAsOwner, stopViewing],
+    [
+      admin,
+      ready,
+      loginAdmin,
+      loginDemo,
+      logoutAdmin,
+      setAdminProfile,
+      viewingAs,
+      viewAsOwner,
+      stopViewing,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

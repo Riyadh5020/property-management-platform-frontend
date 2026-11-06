@@ -277,6 +277,7 @@ export function toList<T>(value: unknown): T[] {
 export const adminApi = {
   login: (body: { email: string; password: string }) =>
     apiRequest<AuthResult>("/admins/login", { method: "POST", body }),
+  demoLogin: () => apiRequest<AuthResult>("/admins/demo-login", { method: "POST" }),
    refreshToken: (body: { refreshToken: string }) =>
     apiRequest<{ accessToken: string; refreshToken: string }>("/admins/refresh-token", { method: "POST", body }),
  logout: () => apiRequest<null>("/admins/logout", { method: "POST", auth: "admin" }),
