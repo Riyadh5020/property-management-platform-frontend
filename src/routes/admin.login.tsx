@@ -40,18 +40,22 @@ function AdminLoginPage() {
     }
   }, [auth.ready, auth.admin, navigate]);
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const signIn = async (attempt: () => Promise<void>) => {
     setError(null);
     setLoading(true);
     try {
-      await auth.loginAdmin(email, password);
+      await attempt();
       // navigation happens via the useEffect above once auth.admin updates
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
       setLoading(false);
     }
+  };
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    void signIn(() => auth.loginAdmin(email, password));
   };
 
   return (
@@ -94,6 +98,18 @@ function AdminLoginPage() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={loading}
+          onClick={() => void signIn(auth.loginDemo)}
+        >
+          Try the demo
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          The demo is a shared test account. Anyone can change its data.
+        </p>
         <p className="text-center text-sm text-muted-foreground">
           New here?{" "}
           <Link to="/admin/signup" className="underline">
