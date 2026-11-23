@@ -24,7 +24,7 @@ import { formatMoney } from "@/lib/store";
 export const Route = createFileRoute("/maintenance")({
   head: () => ({
     meta: [
-      { title: "Maintenance — EstateOps" },
+      { title: "Repairs — EstateOps" },
       { name: "description", content: "Work orders, preventive schedules and common area upkeep." },
     ],
   }),
@@ -258,7 +258,7 @@ function MaintenancePage() {
   return (
     <AppShell>
       <PageHeader
-        title="Maintenance"
+        title="Repairs"
         description="Tenant requests, preventive schedules and common-area upkeep."
         actions={
           <>

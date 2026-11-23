@@ -22,7 +22,7 @@ const guides: Record<string, PageGuideContent> = {
         "Look at the numbers to see your properties, units and how many are occupied.",
       ],
       example:
-        'To do says "Rent invoices waiting for payment: 2". Click it, and Rent & billing opens so you can record the payments.',
+        'To do says "Rent invoices waiting for payment: 2". Click it, and Rent opens so you can record the payments.',
     },
     bn: {
       title: "ড্যাশবোর্ড",
@@ -34,7 +34,7 @@ const guides: Record<string, PageGuideContent> = {
         "সংখ্যাগুলো দেখে বুঝুন কয়টি প্রপার্টি ও ইউনিট আছে, আর কয়টি ভাড়া হয়েছে।",
       ],
       example:
-        'To do-তে লেখা "Rent invoices waiting for payment: 2"। ক্লিক করলে Rent & billing খুলবে, সেখানে পেমেন্ট রেকর্ড করুন।',
+        'To do-তে লেখা "Rent invoices waiting for payment: 2"। ক্লিক করলে Rent খুলবে, সেখানে পেমেন্ট রেকর্ড করুন।',
     },
   },
   "/admin": {
@@ -65,7 +65,7 @@ const guides: Record<string, PageGuideContent> = {
   },
   "/properties": {
     en: {
-      title: "Properties",
+      title: "Buildings",
       purpose: "Your buildings. A property holds its floors, units and subscription details.",
       steps: [
         "Owners: to add a building, send a request from the Requests page.",
@@ -114,7 +114,7 @@ const guides: Record<string, PageGuideContent> = {
   },
   "/units": {
     en: {
-      title: "Units",
+      title: "Flats",
       purpose: "Every flat, shop or office, with its rent and status.",
       steps: [
         "Open a floor to see its units.",
@@ -144,7 +144,7 @@ const guides: Record<string, PageGuideContent> = {
       steps: [
         "Search by unit code or building.",
         "Filter by occupancy to see, for example, only vacant flats.",
-        "This page only shows information. Make changes on the Tenants, Leases or Maintenance pages.",
+        "This page only shows information. Make changes on the Tenants, Agreements or Repairs pages.",
       ],
       example:
         "Someone asks for an empty flat. Filter by vacant and you can see at once which ones are free.",
@@ -155,7 +155,7 @@ const guides: Record<string, PageGuideContent> = {
       steps: [
         "ইউনিট কোড বা বিল্ডিংয়ের নাম দিয়ে খুঁজুন।",
         "ফিল্টার দিয়ে যেমন শুধু খালি ফ্ল্যাটগুলো দেখুন।",
-        "এই পেজ শুধু দেখার জন্য। পরিবর্তন করতে Tenants, Leases বা Maintenance পেজে যান।",
+        "এই পেজ শুধু দেখার জন্য। পরিবর্তন করতে Tenants, Agreements বা Repairs পেজে যান।",
       ],
       example: "কেউ খালি ফ্ল্যাট চাইলেন। vacant ফিল্টার করলেই দেখবেন কোনগুলো খালি।",
     },
@@ -167,7 +167,7 @@ const guides: Record<string, PageGuideContent> = {
       steps: [
         "Click New tenant.",
         "Choose the building, floor and unit, then enter the name. Phone, ID and the other details are optional but useful.",
-        "Next, create a lease on the Leases page so rent can be billed.",
+        "Next, create a lease on the Agreements page so rent can be billed.",
       ],
       example:
         "Rahim moves into 4B. Add Rahim here with his phone and NID, then create his lease with a rent of ৳15,000.",
@@ -178,7 +178,7 @@ const guides: Record<string, PageGuideContent> = {
       steps: [
         "New tenant চাপুন।",
         "বিল্ডিং, ফ্লোর ও ইউনিট বেছে নাম লিখুন। ফোন, আইডি ও অন্যান্য তথ্য ঐচ্ছিক, তবে কাজে লাগে।",
-        "এরপর Leases পেজে লিজ তৈরি করুন, তাহলে ভাড়ার বিল হবে।",
+        "এরপর Agreements পেজে লিজ তৈরি করুন, তাহলে ভাড়ার বিল হবে।",
       ],
       example:
         "রহিম 4B-তে উঠলেন। ফোন ও NID দিয়ে এখানে রহিমকে যোগ করুন, তারপর ৳১৫,০০০ ভাড়ায় তাঁর লিজ তৈরি করুন।",
@@ -186,7 +186,7 @@ const guides: Record<string, PageGuideContent> = {
   },
   "/leases": {
     en: {
-      title: "Leases",
+      title: "Agreements",
       purpose:
         "The rent agreement between you and a tenant. Monthly rent invoices come from active leases.",
       steps: [
@@ -213,7 +213,7 @@ const guides: Record<string, PageGuideContent> = {
   },
   "/billing": {
     en: {
-      title: "Rent & billing",
+      title: "Rent",
       purpose:
         "Rent invoices and payments. Each active lease gets an invoice automatically every month.",
       steps: [
@@ -241,7 +241,7 @@ const guides: Record<string, PageGuideContent> = {
   },
   "/maintenance": {
     en: {
-      title: "Maintenance",
+      title: "Repairs",
       purpose:
         "Repairs from request to finish. A manager's request needs the owner's approval before work starts.",
       steps: [
@@ -536,9 +536,9 @@ const guides: Record<string, PageGuideContent> = {
   },
   "/subscription-invoices": {
     en: {
-      title: "Billing",
+      title: "My subscription",
       purpose:
-        "Invoices for the EstateOps subscription, not tenant rent. Rent is on the Rent & billing page.",
+        "Invoices for the EstateOps subscription, not tenant rent. Rent is on the Rent page.",
       steps: [
         "An invoice appears by itself when a paid plan starts or renews.",
         "Owner: use a discount code with Use coupon, and pay the way you agreed with support.",
@@ -549,8 +549,7 @@ const guides: Record<string, PageGuideContent> = {
     },
     bn: {
       title: "বিলিং",
-      purpose:
-        "EstateOps সাবস্ক্রিপশনের ইনভয়েস, টেনান্টের ভাড়া নয়। ভাড়া থাকে Rent & billing পেজে।",
+      purpose: "EstateOps সাবস্ক্রিপশনের ইনভয়েস, টেনান্টের ভাড়া নয়। ভাড়া থাকে Rent পেজে।",
       steps: [
         "পেইড প্ল্যান শুরু বা নবায়ন হলে ইনভয়েস নিজে থেকেই আসে।",
         "ওনার: Use coupon দিয়ে ডিসকাউন্ট কোড দিন, আর সাপোর্টের সাথে ঠিক করা উপায়ে টাকা দিন।",
@@ -635,10 +634,10 @@ const guides: Record<string, PageGuideContent> = {
       steps: [
         "The list shows the soonest to end first.",
         "Use the filter for those ending in 7 days or already expired.",
-        "To renew or extend, open the property on the Properties page.",
+        "To renew or extend, open the property on the Buildings page.",
       ],
       example:
-        "A property shows 3 days left. Call the owner, then renew it from the Properties page.",
+        "A property shows 3 days left. Call the owner, then renew it from the Buildings page.",
     },
     bn: {
       title: "সাবস্ক্রিপশনের অবস্থা",
@@ -646,10 +645,10 @@ const guides: Record<string, PageGuideContent> = {
       steps: [
         "যেটি আগে শেষ হবে সেটি আগে দেখায়।",
         "৭ দিনে শেষ হবে বা মেয়াদ শেষ, সেগুলোর জন্য ফিল্টার ব্যবহার করুন।",
-        "নবায়ন বা মেয়াদ বাড়াতে Properties পেজে প্রপার্টিটি খুলুন।",
+        "নবায়ন বা মেয়াদ বাড়াতে Buildings পেজে প্রপার্টিটি খুলুন।",
       ],
       example:
-        "একটি প্রপার্টিতে ৩ দিন বাকি দেখাচ্ছে। ওনারকে ফোন করে Properties পেজ থেকে নবায়ন করুন।",
+        "একটি প্রপার্টিতে ৩ দিন বাকি দেখাচ্ছে। ওনারকে ফোন করে Buildings পেজ থেকে নবায়ন করুন।",
     },
   },
   "/coupons": {

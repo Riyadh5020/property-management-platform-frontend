@@ -49,7 +49,7 @@ import { formatMoney } from "@/lib/store";
 export const Route = createFileRoute("/leases")({
   head: () => ({
     meta: [
-      { title: "Leases — EstateOps" },
+      { title: "Agreements — EstateOps" },
       { name: "description", content: "Lease agreements, rent escalation and deposits." },
     ],
   }),
@@ -273,7 +273,7 @@ function LeasesPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Leases"
+        title="Agreements"
         description="Agreements, rent, deposits and yearly escalation. A unit can have only one live lease at a time."
         actions={
           <>

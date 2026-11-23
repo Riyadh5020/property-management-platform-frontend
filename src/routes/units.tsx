@@ -16,7 +16,7 @@ export const Route = createFileRoute("/units")({
     ownerId: str(s["ownerId"]),
     propertyId: str(s["propertyId"]),
   }),
-  head: () => ({ meta: [{ title: "Units — EstateOps" }] }),
+  head: () => ({ meta: [{ title: "Flats — EstateOps" }] }),
   component: UnitsRoute,
 });
 
@@ -38,7 +38,7 @@ function UnitsRoute() {
   if (role === "superAdmin") {
     return (
       <OwnerDrill
-        title="Units"
+        title="Flats"
         description="Pick an owner, then a property, then a floor to manage its units."
         propertyButton="View floors"
         ownerId={ownerId}
@@ -51,7 +51,7 @@ function UnitsRoute() {
 
   return (
     <PropertyPicker
-      title="Units"
+      title="Flats"
       description="Pick a property, then a floor, to manage its units."
       buttonLabel="View floors"
       onProperty={(id) => void navigate({ to: "/units", search: { propertyId: id } })}
@@ -114,7 +114,7 @@ function PropertyFloors({ propertyId, onBack }: { propertyId: string; onBack: ()
       <Button variant="ghost" size="sm" className="mb-2" onClick={onBack}>
         <ArrowLeft className="size-4" /> Back to properties
       </Button>
-      <PageHeader title={property?.title ?? "Units"} description="Pick a floor to view and manage its units." />
+      <PageHeader title={property?.title ?? "Flats"} description="Pick a floor to view and manage its units." />
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading floors…</p>
       ) : floors.length === 0 ? (
@@ -154,7 +154,7 @@ function PropertyFloors({ propertyId, onBack }: { propertyId: string; onBack: ()
 
 //   return (
 //     <AppShell>
-//       <PageHeader title="Units" description="Pick a floor to view and manage its units." />
+//       <PageHeader title="Flats" description="Pick a floor to view and manage its units." />
 //       {loading ? (
 //         <p className="text-sm text-muted-foreground">Loading floors…</p>
 //       ) : floors.length === 0 ? (

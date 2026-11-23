@@ -36,8 +36,8 @@ export const Route = createFileRoute("/")({
 const modules = [
   { icon: Building2, title: "Buildings & units", text: "Multi-building registry with floor, unit type, furnishing and live status." },
   { icon: Users, title: "Tenants", text: "Contact details, ID documents, co-tenants and move-in / move-out dates." },
-  { icon: FileSignature, title: "Leases", text: "Agreements, deposits and yearly rent increases." },
-  { icon: Receipt, title: "Rent & billing", text: "Automatic monthly invoices, partial payments and printable receipts." },
+  { icon: FileSignature, title: "Agreements", text: "Deposits and yearly rent increases." },
+  { icon: Receipt, title: "Rent", text: "Automatic monthly invoices, partial payments and printable receipts." },
   { icon: Wrench, title: "Maintenance", text: "Repair requests, owner approval and automatic expense records." },
   { icon: ShieldCheck, title: "Visitors", text: "A simple log of guests, deliveries and incidents." },
   { icon: CarFront, title: "Parking", text: "Assign slots to units and track each slot's fee." },
