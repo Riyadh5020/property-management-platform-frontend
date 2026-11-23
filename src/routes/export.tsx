@@ -20,7 +20,7 @@ export const Route = createFileRoute("/export")({
 const TYPES = [
   { type: "properties", label: "Properties" },
   { type: "tenants", label: "Tenants" },
-  { type: "leases", label: "Leases" },
+  { type: "leases", label: "Agreements" },
   { type: "invoices", label: "Rent invoices" },
   { type: "payments", label: "Rent payments" },
   { type: "expenses", label: "Expenses" },

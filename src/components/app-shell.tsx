@@ -11,6 +11,7 @@ import {
   Building2,
   CalendarClock,
   CarFront,
+  ChevronDown,
 
   FileQuestion,
   CreditCard,
@@ -48,60 +49,49 @@ interface NavItem {
   icon: typeof Building2;
 }
 
-type NavSection = { group: string; items: NavItem[] };
+type NavSection = { group: string; items: NavItem[]; collapsible?: boolean };
 
-// The same plain groups for owners and managers; a manager only sees what their permissions allow.
+// Owners and managers: the everyday pages first, the rest folded under "More".
+// A manager only sees what their permissions allow.
 const workspaceNav = (isOwner: boolean): NavSection[] => [
   {
-    group: "Home",
-    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-  },
-  {
-    group: "Buildings",
+    group: "Main",
     items: [
-      { to: "/properties", label: "Properties", icon: Home },
-      { to: "/floors", label: "Floors", icon: Layers },
-      { to: "/units", label: "Units", icon: LayoutGrid },
-      { to: "/flat-status", label: "Flat status", icon: Building2 },
-    ],
-  },
-  {
-    group: "Tenants & rent",
-    items: [
+      { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+      { to: "/properties", label: "Buildings", icon: Home },
+      { to: "/units", label: "Flats", icon: LayoutGrid },
       { to: "/tenants", label: "Tenants", icon: Users },
-      { to: "/leases", label: "Leases", icon: FileText },
-      { to: "/billing", label: "Rent & billing", icon: Receipt },
+      { to: "/leases", label: "Agreements", icon: FileText },
+      { to: "/billing", label: "Rent", icon: Receipt },
+      { to: "/maintenance", label: "Repairs", icon: Wrench },
+      { to: "/expenses", label: "Expenses", icon: Wallet },
     ],
   },
   {
-    group: "Day-to-day",
+    group: "More",
+    collapsible: true,
     items: [
-      { to: "/maintenance", label: "Maintenance", icon: Wrench },
-      { to: "/expenses", label: "Expenses", icon: Wallet },
+      { to: "/floors", label: "Floors", icon: Layers },
+      { to: "/flat-status", label: "Flat status", icon: Building2 },
       { to: "/utilities", label: "Utilities", icon: Zap },
       { to: "/parking", label: "Parking", icon: CarFront },
       { to: "/visitors", label: "Visitors", icon: UserCheck },
       { to: "/notices", label: "Notices", icon: Megaphone },
       { to: "/amenities", label: "Amenities", icon: Dumbbell },
       { to: "/emergency-contacts", label: "Emergency contacts", icon: PhoneCall },
-    ],
-  },
-  ...(isOwner
-    ? [
-        {
-          group: "Team & records",
-          items: [
+      ...(isOwner
+        ? [
             { to: "/admin/admins", label: "Managers", icon: Shield },
             { to: "/staff", label: "Staff", icon: UsersRound },
             { to: "/requests", label: "Requests", icon: FileQuestion },
             { to: "/activity", label: "Activity log", icon: History },
-            { to: "/subscription-invoices", label: "Billing", icon: CreditCard },
+            { to: "/subscription-invoices", label: "My subscription", icon: CreditCard },
             { to: "/export", label: "Export data", icon: Download },
             { to: "/tickets", label: "Support", icon: LifeBuoy },
-          ],
-        },
-      ]
-    : []),
+          ]
+        : []),
+    ],
+  },
 ];
 
 const superAdminConsoleNav: NavSection[] = [
@@ -119,9 +109,9 @@ const superAdminConsoleNav: NavSection[] = [
   {
     group: "Buildings",
     items: [
-      { to: "/properties", label: "Properties", icon: Home },
+      { to: "/properties", label: "Buildings", icon: Home },
       { to: "/floors", label: "Floors", icon: Layers },
-      { to: "/units", label: "Units", icon: LayoutGrid },
+      { to: "/units", label: "Flats", icon: LayoutGrid },
     ],
   },
   {
@@ -165,6 +155,7 @@ export function AppShell({
   const navigate = useNavigate();
   const auth = useAuth();
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const session = auth.admin;
   const role = session?.admin?.role;
@@ -188,6 +179,12 @@ export function AppShell({
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // Keep "More" unfolded while one of its pages is open.
+  const inMore = nav.some((s) => s.collapsible && s.items.some((i) => i.to === pathname));
+  useEffect(() => {
+    if (inMore) setMoreOpen(true);
+  }, [inMore]);
 
   useEffect(() => {
     if (!auth.ready) return;
@@ -240,10 +237,27 @@ export function AppShell({
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           {nav.map((section) => (
             <div key={section.group}>
-              <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {section.group}
-              </p>
-              <div className="space-y-1">
+              {section.collapsible ? (
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen((v) => !v)}
+                  aria-expanded={moreOpen}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-sidebar-foreground"
+                >
+                  <span className="flex-1 text-left">{section.group}</span>
+                  {!moreOpen && section.items.some((i) => i.to === "/requests") ? (
+                    <CountBadge n={pending.total} />
+                  ) : null}
+                  <ChevronDown
+                    className={cn("size-4 transition-transform", moreOpen && "rotate-180")}
+                  />
+                </button>
+              ) : (
+                <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {section.group}
+                </p>
+              )}
+              <div className={cn("space-y-1", section.collapsible && !moreOpen && "hidden")}>
                 {section.items.map((item) => (
                   <Link
                     key={item.to}

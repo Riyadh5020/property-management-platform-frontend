@@ -43,7 +43,7 @@ import { formatMoney } from "@/lib/store";
 export const Route = createFileRoute("/billing")({
   head: () => ({
     meta: [
-      { title: "Rent & Billing — EstateOps" },
+      { title: "Rent — EstateOps" },
       { name: "description", content: "Monthly rent invoices, charges, payments and reversals." },
     ],
   }),
@@ -275,7 +275,7 @@ function BillingPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Rent & billing"
+        title="Rent"
         description="Monthly invoices from active leases, charges, payments and reversals."
         actions={
           <>

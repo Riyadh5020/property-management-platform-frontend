@@ -88,7 +88,7 @@ function record(
 export const resources: Record<string, ResourceDef> = {
   properties: {
     key: "properties",
-    title: "Properties",
+    title: "Buildings",
     singular: "Property",
 description: "Properties registered on the platform.",
     apiBacked: true,

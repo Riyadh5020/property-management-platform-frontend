@@ -61,7 +61,7 @@ const ROLES: AdminRole[] = ["superAdmin", "owner", "manager"];
 const PAGE_SIZE = 20;
 const PERMISSION_OPTIONS: { key: keyof ManagerPermissions; label: string }[] = [
   { key: "tenants", label: "Tenants" },
-  { key: "rent", label: "Rent & billing" },
+  { key: "rent", label: "Rent" },
   { key: "expenses", label: "Expenses" },
   { key: "maintenance", label: "Maintenance" },
 ];

@@ -13,9 +13,9 @@ export const Route = createFileRoute("/properties")({
   }),
   head: () => ({
     meta: [
-      { title: "Properties — EstateOps" },
+      { title: "Buildings — EstateOps" },
       { name: "description", content: "Properties registered on the platform." },
-      { property: "og:title", content: "Properties — EstateOps" },
+      { property: "og:title", content: "Buildings — EstateOps" },
       { property: "og:description", content: "Properties registered on the platform." },
     ],
   }),
@@ -31,7 +31,7 @@ function PropertiesRoute() {
   if (role === "superAdmin" && !ownerId && view !== "all") {
     return (
       <OwnerDrill
-        title="Properties"
+        title="Buildings"
         description="Pick an owner to see and manage their properties."
         propertyButton=""
         ownerId={undefined}
